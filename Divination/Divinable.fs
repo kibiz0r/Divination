@@ -250,3 +250,113 @@
 //            transformExpr Map.empty expr
 
 //    let newDivine = new NewDivineBuilder ()
+
+open System
+open FSharp.Quotations
+
+type IDivinable =
+    abstract member Value : obj
+    abstract member ToExpr : unit -> Expr
+
+[<AbstractClass>]
+type Divinable<'T> () as this =
+    abstract member Value : 'T
+    abstract member ToExpr : unit -> Expr
+
+    member this.ToExprTyped () = this.ToExpr () |> Expr.Cast
+
+    interface IDivinable with
+        member i.Value = this.Value :> obj
+        member i.ToExpr () = this.ToExpr ()
+
+module Divinable =
+    module FSharp =
+        type DivinablePropertyGet<'T, 'U> (obj : Divinable<'T> option, propertyName : string, indexerArgs : IDivinable list) =
+            inherit Divinable<'U> ()
+
+            let typ = typeof<'T>
+            let propertyInfo = typ.GetProperty (propertyName)
+
+            override this.Value =
+                let obj' =
+                    match obj with
+                    | Some o -> o :> obj
+                    | None -> null
+                propertyInfo.GetValue (obj', indexerArgs |> Seq.map (fun i -> i.Value) |> Seq.toArray) :?> 'U
+
+            override this.ToExpr () =
+                match obj with
+                | Some o ->
+                    Expr.PropertyGet (o.ToExpr (), propertyInfo, indexerArgs |> List.map (fun i -> i.ToExpr ()))
+                | None ->
+                    Expr.PropertyGet (propertyInfo, indexerArgs |> List.map (fun i -> i.ToExpr ()))
+
+        let PropertyGet<'T, 'U> (obj : Divinable<'T> option, propertyName : string, indexerArgs : IDivinable list) =
+            DivinablePropertyGet (obj, propertyName, indexerArgs) :> Divinable<'U>
+
+        type DivinableValue<'T> (value : 'T) =
+            inherit Divinable<'T> ()
+
+            override this.Value = value
+
+            override this.ToExpr () =
+                Expr.Value<'T> (value)
+
+        let Value<'T> (value : 'T) =
+            DivinableValue (value) :> Divinable<'T>
+
+type DivineAttribute (divineMethodName) =
+    inherit Attribute ()
+
+type DivineMethodException () =
+    inherit Exception ("This is a divine marker method; it should not be called directly.")
+
+module Example =
+    let beforeDiving =
+        <@
+            let x = 5
+            x + 1
+        @>
+
+    let fSharpDivined =
+        <@
+            let x = Divinable.FSharp.Value (5)
+            x.Value + 1
+        @>
+
+    [<Divine("divineAwareMethod")>]
+    let proxyMethod (x : int) : bool = raise (DivineMethodException ())
+
+    let divineAwareMethod (x : Divinable<int>) : Divinable<bool> =
+        // do tricky stuff with x's expr
+        Divinable.FSharp.Value (true)
+
+    let beforeDiviningMethod =
+        <@
+            let x = 5
+            proxyMethod (x)
+        @>
+
+    let divineMethod =
+        <@
+            let x = Divinable.FSharp.Value (5)
+            (divineAwareMethod (x)).Value
+        @>
+
+    let divineReturn =
+        <@
+            let x = Divinable.FSharp.Value (5)
+            divineAwareMethod (x)
+        @>
+
+    let beforeDiviningProperty =
+        <@
+            let x = "hi"
+            x.Length
+        @>
+
+    let divineProperty =
+        <@
+            let x = Divinable.FSharp.Value ("hi")
+            Divinable.FSharp.PropertyGet<string, int>(Some x, "Length", []).Value
+        @>

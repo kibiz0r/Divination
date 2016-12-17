@@ -48,6 +48,7 @@
     <Compile Include="DivinableBuilder.fs" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TopLevelOperations.fs" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(FSharpTargetsPath)" />

@@ -3,7 +3,7 @@
 open System
 open NUnit.Framework
 open FsUnit
-open Divination.Divinable
+open Divination
 open FSharp.Quotations
 
 type DerpClass () =
