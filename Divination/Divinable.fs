@@ -255,55 +255,65 @@ open System
 open FSharp.Quotations
 
 type IDivinable =
-    abstract member Value : obj
-    abstract member ToExpr : unit -> Expr
+    abstract member Divine : IDiviner -> IDivined
 
-[<AbstractClass>]
-type Divinable<'T> () as this =
-    abstract member Value : 'T
-    abstract member ToExpr : unit -> Expr
+and IDivinable<'T> =
+    inherit IDivinable
+    abstract member Divine : IDiviner -> IDivined<'T>
 
-    member this.ToExprTyped () = this.ToExpr () |> Expr.Cast
+and IDivined =
+    abstract member Source : unit -> IDivinable
+    abstract member Value : unit -> obj
 
-    interface IDivinable with
-        member i.Value = this.Value :> obj
-        member i.ToExpr () = this.ToExpr ()
+and IDivined<'T> =
+    inherit IDivined
+    abstract member Source : unit -> IDivinable<'T>
+    abstract member Value : unit -> 'T
+
+and IDiviner =
+    abstract member Value<'T> : 'T -> IDivined<'T>
+    abstract member PropertyGet<'T> : IDivined option * string * IDivined list -> IDivined<'T>
+    abstract member DivineCall<'T> : IDivined option * string * IDivined list -> IDivined<'T>
 
 module Divinable =
-    module FSharp =
-        type DivinablePropertyGet<'T, 'U> (obj : Divinable<'T> option, propertyName : string, indexerArgs : IDivinable list) =
-            inherit Divinable<'U> ()
+    type internal Value<'T> (value : 'T) =
+        interface IDivinable with
+            member this.Divine diviner =
+                diviner.Value value :> IDivined
 
-            let typ = typeof<'T>
-            let propertyInfo = typ.GetProperty (propertyName)
+        interface IDivinable<'T> with
+            member this.Divine diviner =
+                diviner.Value value
 
-            override this.Value =
-                let obj' =
-                    match obj with
-                    | Some o -> o :> obj
-                    | None -> null
-                propertyInfo.GetValue (obj', indexerArgs |> Seq.map (fun i -> i.Value) |> Seq.toArray) :?> 'U
+    let value (value : 'T) =
+        Value (value) :> IDivinable<'T>
 
-            override this.ToExpr () =
+    type internal PropertyGet<'T> (obj : IDivinable option, propertyName : string, indexerArgs : IDivinable list) =
+        let divine diviner =
+            let obj' =
                 match obj with
-                | Some o ->
-                    Expr.PropertyGet (o.ToExpr (), propertyInfo, indexerArgs |> List.map (fun i -> i.ToExpr ()))
-                | None ->
-                    Expr.PropertyGet (propertyInfo, indexerArgs |> List.map (fun i -> i.ToExpr ()))
+                | Some o -> Some (o.Divine diviner)
+                | None -> None
+            let indexerArgs' = indexerArgs |> List.map (fun i -> i.Divine diviner)
+            diviner.PropertyGet<'T> (obj', propertyName, indexerArgs')
 
-        let PropertyGet<'T, 'U> (obj : Divinable<'T> option, propertyName : string, indexerArgs : IDivinable list) =
-            DivinablePropertyGet (obj, propertyName, indexerArgs) :> Divinable<'U>
+        interface IDivinable with
+            member this.Divine diviner =
+                divine diviner :> IDivined
 
-        type DivinableValue<'T> (value : 'T) =
-            inherit Divinable<'T> ()
+        interface IDivinable<'T> with
+            member this.Divine diviner =
+                divine diviner
 
-            override this.Value = value
+    let propertyGet (obj : IDivinable<'T> option, propertyName : string, indexerArgs : IDivinable<#obj> list) =
+        let obj' =
+            match obj with
+            | Some o -> Some (o :> IDivinable)
+            | None -> None
+        PropertyGet (obj', propertyName, indexerArgs |> List.map (fun i -> i :> IDivinable)) :> IDivinable<'T>
 
-            override this.ToExpr () =
-                Expr.Value<'T> (value)
-
-        let Value<'T> (value : 'T) =
-            DivinableValue (value) :> Divinable<'T>
+    let divineCall (obj : IDivinable<'T> option, methodName : string, arguments : IDivinable<#obj> list) =
+        ()
 
 type DivineAttribute (divineMethodName) =
     inherit Attribute ()
@@ -327,9 +337,9 @@ module Example =
     [<Divine("divineAwareMethod")>]
     let proxyMethod (x : int) : bool = raise (DivineMethodException ())
 
-    let divineAwareMethod (x : Divinable<int>) : Divinable<bool> =
+    let divineAwareMethod (x : IDivined<int>) : IDivinable<bool> =
         // do tricky stuff with x's expr
-        Divinable.FSharp.Value (true)
+        obj () :?> IDivinable<bool>
 
     let beforeDiviningMethod =
         <@
@@ -339,8 +349,8 @@ module Example =
 
     let divineMethod =
         <@
-            let x = Divinable.FSharp.Value (5)
-            (divineAwareMethod (x)).Value
+            let x = Divinable.value (5)
+            Divinable.divineMethod (divineAwareMethod, x)
         @>
 
     let divineReturn =
@@ -357,6 +367,76 @@ module Example =
 
     let divineProperty =
         <@
-            let x = Divinable.FSharp.Value ("hi")
-            Divinable.FSharp.PropertyGet<string, int>(Some x, "Length", []).Value
+            let x = Divinable.value ("hi")
+            Divinable.propertyGet(Some x, "Length", [])
         @>
+
+module UsingDivinableAndDivinedDirectly =
+    // This is more explicit, but requires that there are either two different computation expression forms, or that
+    // there is special behavior to not promote Divineds in the expressions the same way everything else is promoted.
+    // 
+    // The return type of the expression is also an issue. Normally, it would be captured as <'T> and become
+    // IDivinable<'T>, but here it needs to go from IDivined<'T> to IDivinable<'T>.
+    // 
+    // It also requires being aware of the divine version of the proxy methods, which actually may not be publicly
+    // available... So it kind of seems like this is a more advanced use case and should not be covered by the sugared
+    // syntax
+    let itMightBeLikeThis =
+        let divinable : IDivinable<int> = obj () :?> IDivinable<int>
+        divine {
+            let! divined : IDivined<int> = divinable
+            divineAwareMethod divined
+            return divined
+        }
+
+    // This one also sort of has special behavior, but it's limited to the right-hand side of let!, which makes sense.
+    // It also maintains the illusion of proxy methods, which keeps the control of their resolution still in the hands
+    // of the diviner.
+    let orMaybeLikeThis =
+        let myDivinable : IDivinable<int> = obj () :?> IDivinable<int>
+        divine {
+            let! divinedValue : int = myDivinable
+            proxyMethod divinedValue
+            return divinedValue
+        }
+        let viaCompilerBecomes =
+            <@
+                builder.Return(
+                    builder.Bind (myDivinable, fun (divinedValue : int) ->
+                        proxyMethod divinedValue
+                    )
+                )
+            @>
+        // It seems that we're always going to be chopping off the builder.Return call, no matter what form we do.
+        // Kind of cool though that we can use the same transformation that we use for client code to handle the case of
+        // builder.Bind => builder.DivineBind
+        let thenViaExprTransformationBecomes =
+            <@
+                // This would just be internal to the transformer, but it is important that they are reference-equal
+                let divinedValueVar = Divinable.var<int> "divinedValue"
+                Divinable.divineCall (Divinable.value builder, "DivineBind",
+                    [
+                        myDivinable,
+                        Divinable.lambda
+                        (
+                            divinedValueVar,
+                            Divinable.divineCall (None, "divineAwareMethod", [divinedValueVar])
+                        )
+                    ]
+                )
+            @>
+
+        let andADirectionUseCaseMightLookLike =
+            <@
+                let car : IDirectable<Car> = Directable.create<Car> ([()])
+                Directable.divineCall (Divinable.value builder, "DirectBind",
+                    [
+                        car,
+                        Directable.enact
+                        (
+                            car,
+                            Divinable.divineCall (car, "OpenDoor", [()])
+                        )
+                    ]
+                )
+            @>

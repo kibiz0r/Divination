@@ -46,6 +46,7 @@
     <Compile Include="Divinable.fs" />
     <Compile Include="DivinableExpr.fs" />
     <Compile Include="DivinableBuilder.fs" />
+    <Compile Include="Exalter.fs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="TopLevelOperations.fs" />
