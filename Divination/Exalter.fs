@@ -7,13 +7,52 @@ open FSharp.Quotations.ExprShape
 open FSharp.Quotations.Evaluator
 
 type Exalter () =
+    let iDivinableType = typeof<IDivinable>
+    let iDivinableGenericType = typeof<IDivinable<obj>>.GetGenericTypeDefinition ()
+
+    let divinableCastMethodInfo =
+        match <@@ Divinable.cast @@> with
+        | Lambda (_, Call (None, methodInfo, _)) -> methodInfo.GetGenericMethodDefinition ()
+        | _ -> raise (Exception "whoops")
+    let divinableCast (divinable : IDivinable) (type' : Type) : IDivinable =
+        let typedMethod = divinableCastMethodInfo.MakeGenericMethod [|type'|]
+        typedMethod.Invoke (None, [|divinable|]) :?> IDivinable
+
     interface IExalter with
-        member this.Exalt<'T> (toExalt : Expr<'T>) : Divinable<'T> =
+        member this.Exalt<'T> (toExalt : Expr<'T>) : IDivinable<'T> =
             let rec exalt expr =
                 match expr with
                 | Let (var, value, body) -> Divinable.let' (Divinable.var (var.Name, var.Type), exalt value, exalt body)
                 | Value (value) -> Divinable.value value
                 | Var (var) -> Divinable.varGet (var.Name)
+                | Call (this', methodInfo, arguments) ->
+                    let exaltedMethodAttributes = methodInfo.GetCustomAttributes (typeof<ExaltedMethodAttribute>, true)
+                    if exaltedMethodAttributes |> Array.isEmpty then
+                        raise (Exception "not exalted")
+                    else
+                        let exaltedMethodName = (exaltedMethodAttributes.[0] :?> ExaltedMethodAttribute).ExaltedMethodName
+                        let exaltedMethod = methodInfo.ReflectedType.GetMethod exaltedMethodName
+
+                        if exaltedMethod.IsGenericMethodDefinition then
+                            raise (InvalidOperationException "Exalted methods must not be generic")
+
+                        let this'' : obj = null
+
+                        let exaltedMethodParameters = exaltedMethod.GetParameters ()
+                        let arguments' : obj [] =
+                            Seq.zip exaltedMethodParameters arguments
+                            |> Seq.map (fun (parameter, argument) ->
+                                let parameterType = parameter.ParameterType
+                                if not <| iDivinableType.IsAssignableFrom parameterType then
+                                    raise (ArgumentException ("Exalted parameters must accept IDivinable or a specific IDivinable<'T>", parameter.Name))
+                                let exalted = exalt argument
+                                if parameterType.IsGenericType then
+                                    divinableCast exalted parameterType.GenericTypeArguments.[0]
+                                else
+                                    exalted
+                            ) |> Seq.cast |> Seq.toArray
+
+                        exaltedMethod.Invoke (this'', arguments') :?> IDivinable
                 | _ -> raise (Exception "whoops")
             exalt toExalt |> Divinable.cast
 

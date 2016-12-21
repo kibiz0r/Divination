@@ -18,13 +18,11 @@ open FSharp.Interop.Dynamic
 [<TestFixture>]
 module DivinerTest =
     let diviner = Diviner () :> IDiviner
-    let divine (divinable : Divinable<'T>) : Divined<'T> =
-        let divined = Divinable.divine diviner divinable.Raw
-        { Source = divinable; Value = divined.Value :?> 'T }
+    let divine = Divinable.divine diviner
 
     [<Test>]
     let ``Diviner does stuff`` () =
         let divinable = Divinable.value (5, typeof<int>) |> Divinable.cast
         let divined : Divined<int> = divine divinable
-        let expected : Divined<int> = { Source = divinable; Value = 5 }
+        let expected : Divined<int> = { Source = DivinedExpr.DivinedValue { Value = 5; Type = typeof<int> }; Value = 5 }
         divined |> should equal expected

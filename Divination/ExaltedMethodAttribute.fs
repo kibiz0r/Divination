@@ -2,5 +2,7 @@
 
 open System
 
-type ExaltedMethodAttribute (divineMethodName) =
+type ExaltedMethodAttribute (exaltedMethodName : string) =
     inherit Attribute ()
+
+    member this.ExaltedMethodName = exaltedMethodName
