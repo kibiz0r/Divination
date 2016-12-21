@@ -3,19 +3,15 @@
 open System
 
 type Diviner () =
-    interface IDiviner
+    interface IDiviner with
+        member this.Let (let' : DivinableLet) : obj =
+            obj ()
 
-    member this.Divine (divinable : IDivinable) : obj =
-        raise (NotImplementedException ())
+        member this.Value (value : DivinableValue) : obj =
+            value.Value
 
-    member this.Divine<'T> (divinable : IDivinable<'T>) : 'T =
-        raise (NotImplementedException ())
-
-    member this.Divine (divinable : DivinableValue) : obj =
-        divinable.Value
-
-    member this.Divine (value : DivinableUnion) : obj =
-        raise (Exception "got union")
+        member this.VarGet (varGet : DivinableVarGet) : obj =
+            obj ()
 
     //member this.Divine (value : DivinableValueUnionCaseType) : obj =
     //    raise (Exception "got union case type")

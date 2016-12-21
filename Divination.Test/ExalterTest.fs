@@ -19,7 +19,7 @@ module ExalterTest =
                     let x : int = 5
                     x
                 @>
-        let expected : IDivinable<int> =
+        let expected : Divinable<int> =
             Divinable.let'
                 (
                     Divinable.var ("x", typeof<int>),

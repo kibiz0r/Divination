@@ -3,42 +3,73 @@
 open System
 open FSharp.Interop.Dynamic
 
-type Divinable<'T> (raw : IDivinable) =
-    interface IDivinable<'T>
+type Divinable =
+    | DivinableValue of DivinableValue
+    | DivinableLet of DivinableLet
+    | DivinableVarGet of DivinableVarGet
 
-    member this.Raw = raw
+and DivinableLet = {
+    Var : DivineVar
+    Value : Divinable
+    Body : Divinable
+}
 
-type DivinableValueUnionCaseType = {
+and DivinableValue = {
+    Value : obj
+    Type : Type
+}
+
+and DivinableVarGet = {
+    Name : string
+}
+
+and IDiviner =
+    abstract member Let : DivinableLet -> obj
+    abstract member Value : DivinableValue -> obj
+    abstract member VarGet : DivinableVarGet -> obj
+
+type Divinable<'T> = {
+    Raw : Divinable
+}
+
+type Divined = {
+    Source : Divinable
     Value : obj
 }
 
-type DivinableUnion =
-    | DivinableValueUnionCase of DivinableValueUnionCaseType
+type Divined<'T> = {
+    Source : Divinable<'T>
+    Value : 'T
+}
 
 module Divinable =
-    let divine (diviner : IDiviner) (divinable : IDivinable) : Divined<'T> =
+    let divine (diviner : IDiviner) (divinable : Divinable) : Divined =
         let divinerType = diviner.GetType ()
-        let value = diviner?Divine divinable
+        let value =
+            match divinable with
+            | Divinable.DivinableLet let' -> diviner.Let let'
+            | Divinable.DivinableValue value -> diviner.Value value
+            | Divinable.DivinableVarGet varGet -> diviner.VarGet varGet
 
         {
             Source = divinable
-            Value = value
+            Value = value :?> 'T
         }
 
-    let cast (divinable : IDivinable) : IDivinable<'T> =
-        Divinable<'T> divinable :> IDivinable<'T>
+    let cast (divinable : Divinable) : Divinable<'T> =
+        { Raw = divinable }
 
-    let value (value : obj, type' : Type) : IDivinable =
-        DivinableValue (value, type') :> IDivinable
+    let value (value : obj, type' : Type) : Divinable =
+        DivinableValue { Value = value; Type = type' }
 
     let var (name : string, type' : Type) : DivineVar =
         { Name = name; Type = type' }
 
-    let varGet (name : string) : IDivinable =
-        DivinableVarGet name :> IDivinable
+    let varGet (name : string) : Divinable =
+        DivinableVarGet { Name = name }
 
-    let let' (var : DivineVar, value : IDivinable, body : IDivinable) : IDivinable =
-        DivinableLet (var, value, body) :> IDivinable
+    let let' (var : DivineVar, value : Divinable, body : Divinable) : Divinable =
+        DivinableLet { Var = var; Value = value; Body = body }
 
     //static member Value (value : obj) =
     //    DivinableValue (value) :> IDivinable

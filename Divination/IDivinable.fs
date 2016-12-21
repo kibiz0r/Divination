@@ -2,18 +2,18 @@
 
 open System
 
-type IDivinable =
-    interface
-    end
+//type IDivinable =
+//    interface
+//    end
 
-and IDivinable<'T> =
-    inherit IDivinable
+//and IDivinable<'T> =
+//    inherit IDivinable
 
-type Divined<'T> = {
-    Source : IDivinable
-    [<ExaltedProperty("Source")>]
-    Value : 'T
-}
+//type Divined<'T> = {
+//    Source : IDivinable
+//    [<ExaltedProperty("Source")>]
+//    Value : 'T
+//}
 
 //and IDivined<'T> =
 //    inherit IDivined
@@ -21,6 +21,3 @@ type Divined<'T> = {
 //    [<ExaltedProperty("Source")>]
 //    abstract member Value : 'T
 
-and IDiviner =
-    interface
-    end

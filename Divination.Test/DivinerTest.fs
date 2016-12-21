@@ -10,23 +10,21 @@ open FSharp.Interop.Dynamic
 
 // So here's what we do:
 // We start with a normal expression tree
-// We end up with an opaque IDivinable<'T>, which represents an unevaluated expression tree that only consists of expressions that can be consistently replayed anywhere
-// When we evaluate the IDivinable<'T>, we must provide a context for the expression tree, which comes in the form of a IDiviner
-// Since we cannot know what sort of context the IDivinable<'T> needs, nor what the IDiviner provides, we do runtime resolution of overloads of Divine() on the diviner
+// We end up with a Divinable tree, which represents an unevaluated expression tree that only consists of expressions that can be consistently replayed anywhere
+// Divinables only consist of hard, primitive data
+// When we evaluate the Divinable, we must provide a context for the expression tree, which comes in the form of a IDiviner
+// Since we cannot know what sort of context the Divinable ultimately needs, nor what the IDiviner provides, we pass it off to the IDiviner according to its union case
 
 [<TestFixture>]
 module DivinerTest =
     let diviner = Diviner () :> IDiviner
-    let divine (divinable : IDivinable) : Divined<'T> = Divinable.divine diviner divinable
+    let divine (divinable : Divinable<'T>) : Divined<'T> =
+        let divined = Divinable.divine diviner divinable.Raw
+        { Source = divinable; Value = divined.Value :?> 'T }
 
     [<Test>]
     let ``Diviner does stuff`` () =
-        let divinable = Divinable.value (5, typeof<int>)
+        let divinable = Divinable.value (5, typeof<int>) |> Divinable.cast
         let divined : Divined<int> = divine divinable
-        divined |> should equal { Source = divinable; Value = 5 }
-
-    [<Test>]
-    let ``Playground`` () =
-        let divinable = { DivinableValueUnionCaseType.Value = 5 }
-        let divinedValue : obj = diviner?Divine divinable
-        divinedValue |> should equal 5
+        let expected : Divined<int> = { Source = divinable; Value = 5 }
+        divined |> should equal expected

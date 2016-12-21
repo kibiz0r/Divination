@@ -7,12 +7,8 @@ open FSharp.Quotations.ExprShape
 open FSharp.Quotations.Evaluator
 
 type Exalter () =
-    let divinableTypeDefinition = typeof<IDivinable<obj>>.GetGenericTypeDefinition ()
-    let divinableType (typ : Type) =
-        divinableTypeDefinition.MakeGenericType [|typ|]
-
     interface IExalter with
-        member this.Exalt<'T> (toExalt : Expr<'T>) : IDivinable<'T> =
+        member this.Exalt<'T> (toExalt : Expr<'T>) : Divinable<'T> =
             let rec exalt expr =
                 match expr with
                 | Let (var, value, body) -> Divinable.let' (Divinable.var (var.Name, var.Type), exalt value, exalt body)
