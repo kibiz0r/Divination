@@ -20,17 +20,20 @@ module DerpModule =
     let useList ls =
         ls |> Seq.map (fun l -> "Hello " + l)
 
-[<TestFixture>]
-module DivineBuilderTest = 
-    [<Test>]
-    let ``Playground`` () =
-        let divineHellos =
-            divine {
-                let people = ["Alice"; "Bob"]
-                let hellos = people |> Seq.map (fun l -> "Hello " + l)
-                return hellos |> String.concat "\n"
-            }
-        divineHellos.Evaluate () |> should equal "Hello Alice\nHello Bob"
+//[<TestFixture>]
+//module DivineBuilderTest =
+//    [<Test>]
+//    let ``Playground`` () =
+//        let divinable : IDivinable<int> = Divinable.value 5
+//        let divineHellos : IDivinable<string> =
+//            divine {
+//                let people = ["Alice"; "Bob"]
+//                let hellos = people |> Seq.map (fun l -> "Hello " + l)
+//                let! (divinedValue : int) = divinable
+//                return hellos |> String.concat "\n"
+//            }
+//        let divined = divineHellos.Divine (Diviner ())
+//        divined.Value |> should equal "Hello Alice\nHello Bob"
 
     //[<Test>]
     //let ``Playground`` () =
