@@ -1,10 +1,11 @@
-﻿namespace Divination.Test
+namespace Divination.Test
 
 open System
 open NUnit.Framework
 open FsUnit
 open Divination
 open FSharp.Quotations
+open FSharp.Quotations.Patterns
 open FSharp.Quotations.Evaluator
 
 [<TestFixture>]
@@ -22,12 +23,19 @@ module ExalterTest =
         let expected : IDivinable<int> =
             Divinable.let'
                 (
-                    Divinable.var ("x", typeof<int>),
-                    Divinable.value (5, typeof<int>),
-                    Divinable.varGet "x"
+                    Divinable.var ("x", typeof<int>.AssemblyQualifiedName),
+                    Divinable.value (5, typeof<int>.AssemblyQualifiedName),
+                    Divinable.varGet (Divinable.var ("x", typeof<int>.AssemblyQualifiedName))
                 )
             |> Divinable.cast
         exalted |> should equal expected
+
+    let operatorsTypeName =
+        let methodInfo =
+            match <@ 1 + 2 @> with
+            | Call (_, m, _) -> m
+            | _ -> null
+        methodInfo.DeclaringType.AssemblyQualifiedName
 
     type SpecialMethodClass () =
         [<ExaltedMethod("MyExaltedInterfaceMethod")>]
@@ -35,21 +43,21 @@ module ExalterTest =
             raise (ExaltedOnlyMethodException ())
 
         static member MyExaltedInterfaceMethod (x : IDivinable) : IDivinable =
-            Divinable.call (None, "op_Addition", [x; Divinable.value (2, typeof<int>)])
+            Divinable.call (None, operatorsTypeName, "op_Addition", [x; Divinable.value (2, typeof<int>.AssemblyQualifiedName)])
 
         [<ExaltedMethod("MyExaltedTypedMethod")>]
         static member MyProxyTypedMethod (x : int) : int =
             raise (ExaltedOnlyMethodException ())
 
         static member MyExaltedTypedMethod (x : IDivinable<int>) : IDivinable<int> =
-            Divinable.call (None, "op_Addition", [x; Divinable.value (2, typeof<int>)]) |> Divinable.cast
+            Divinable.call (None, operatorsTypeName, "op_Addition", [x; Divinable.value (2, typeof<int>.AssemblyQualifiedName)]) |> Divinable.cast
 
         [<ExaltedMethod("MyExaltedGenericMethod")>]
         static member MyProxyGenericMethod<'T> (x : 'T) : 'T =
             raise (ExaltedOnlyMethodException ())
 
         static member MyExaltedGenericMethod<'T> (x : IDivinable<'T>) : IDivinable<'T> =
-            Divinable.call (None, "op_Addition", [x; Divinable.value (2, typeof<int>)]) |> Divinable.cast
+            Divinable.call (None, operatorsTypeName, "op_Addition", [x; Divinable.value (2, typeof<int>.AssemblyQualifiedName)]) |> Divinable.cast
 
     [<Test>]
     let ``Exalter lets you use special methods`` () =
@@ -62,9 +70,9 @@ module ExalterTest =
         let expected : IDivinable<int> =
             Divinable.let'
                 (
-                    Divinable.var ("x", typeof<int>),
-                    Divinable.value (5, typeof<int>),
-                    SpecialMethodClass.MyExaltedInterfaceMethod (Divinable.varGet "x")
+                    Divinable.var ("x", typeof<int>.AssemblyQualifiedName),
+                    Divinable.value (5, typeof<int>.AssemblyQualifiedName),
+                    SpecialMethodClass.MyExaltedInterfaceMethod (Divinable.varGet (Divinable.var ("x", typeof<int>.AssemblyQualifiedName)))
                 )
             |> Divinable.cast
         exalted |> should equal expected
@@ -80,9 +88,9 @@ module ExalterTest =
         let expected : IDivinable<int> =
             Divinable.let'
                 (
-                    Divinable.var ("x", typeof<int>),
-                    Divinable.value (5, typeof<int>),
-                    SpecialMethodClass.MyExaltedTypedMethod (Divinable.varGet "x" |> Divinable.cast)
+                    Divinable.var ("x", typeof<int>.AssemblyQualifiedName),
+                    Divinable.value (5, typeof<int>.AssemblyQualifiedName),
+                    SpecialMethodClass.MyExaltedTypedMethod (Divinable.varGet (Divinable.var ("x", typeof<int>.AssemblyQualifiedName)) |> Divinable.cast)
                 )
             |> Divinable.cast
         exalted |> should equal expected

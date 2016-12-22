@@ -56,13 +56,15 @@
     <Reference Include="FSharp.Interop.Dynamic">
       <HintPath>..\packages\FSharp.Interop.Dynamic.3.0.0.0\lib\portable-net45+sl50+win\FSharp.Interop.Dynamic.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ExalterTest.fs" />
     <Compile Include="DivinerTest.fs" />
-    <Compile Include="DivineBuilderTest.fs" />
+    <Compile Include="DivinableBuilderTest.fs" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DivinedBuilderTest.fs" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

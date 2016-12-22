@@ -8,9 +8,10 @@ open FSharp.Interop.Dynamic
 // |> IDivinable: totally flexible, but must produce a DivinedExpr when given a Diviner (or maybe something related, like a DivineContext?), which that Diviner will then evaluate
 // |> DivinedExpr: the complete, serializable (primitive data only) expression tree, which represents the actual path of execution to generate a Divined value; the same DivinedExpr must always produce the same Divined value
 
+[<StructuralEquality; StructuralComparison>]
 type DivinedVar = {
     Name : string
-    Type : Type
+    TypeName : string
 }
 
 type DivinedExpr =
@@ -22,6 +23,7 @@ type DivinedExpr =
 
 and DivinedCallExpr = {
     This : DivinedExpr option
+    TypeName : string
     MethodName : string
     Arguments : DivinedExpr list
 }
@@ -39,18 +41,22 @@ and DivinedLetExpr = {
 
 and DivinedValueExpr = {
     Value : obj
-    Type : Type
+    TypeName : string
 }
 
 and DivinedVarGetExpr = {
-    Name : string
+    Var : DivinedVar
+}
+
+type DivineContext = {
+    Variables : Map<DivinedVar, obj>
 }
 
 type IDiviner =
     //abstract member Let : DivinableLet -> obj
     //abstract member Value : DivinableValue -> obj
     //abstract member VarGet : DivinableVarGet -> obj
-    abstract member Eval : DivinedExpr -> obj
+    abstract member Eval : DivinedExpr * DivineContext -> obj
 
 type IDivinable =
     abstract member DivineExpr : IDiviner -> DivinedExpr
@@ -61,7 +67,7 @@ type IDivinable<'T> =
 
 type DivinableVar = {
     Name : string
-    Type : Type
+    TypeName : string
 }
 
 type Divinable<'T> (raw : IDivinable) =
@@ -81,8 +87,9 @@ type Divinable<'T> (raw : IDivinable) =
     interface IDivinable with
         member this.DivineExpr diviner = raw.DivineExpr diviner
 
-type DivinableCall (this' : IDivinable option, methodName : string, arguments : IDivinable list) =
+type DivinableCall (this' : IDivinable option, typeName : string, methodName : string, arguments : IDivinable list) =
     member this.This = this'
+    member this.TypeName = typeName
     member this.MethodName = methodName
     member this.Arguments = arguments
 
@@ -91,7 +98,7 @@ type DivinableCall (this' : IDivinable option, methodName : string, arguments : 
 
     override this.Equals(other) =
         match other with
-        | :? DivinableCall as o -> (this', methodName, arguments) = (o.This, o.MethodName, o.Arguments)
+        | :? DivinableCall as o -> (this', typeName, methodName, arguments) = (o.This, o.TypeName, o.MethodName, o.Arguments)
         | _ -> false
 
     interface IDivinable with
@@ -101,7 +108,32 @@ type DivinableCall (this' : IDivinable option, methodName : string, arguments : 
                 | Some t -> Some (t.DivineExpr diviner)
                 | None -> None
             let arguments' = arguments |> List.map (fun a -> a.DivineExpr diviner)
-            DivinedExpr.DivinedCall { This = this''; MethodName = methodName; Arguments = arguments' }
+            DivinedExpr.DivinedCall { This = this''; TypeName = typeName; MethodName = methodName; Arguments = arguments' }
+
+//type DivinableExaltedCall (this' : obj option, type' : Type, methodName : string, arguments : IDivinable list) =
+//    member this.This = this'
+//    member this.Type = type'
+//    member this.MethodName = methodName
+//    member this.Arguments = arguments
+
+//    override this.GetHashCode() =
+//        hash (this', methodName, arguments)
+
+//    override this.Equals(other) =
+//        match other with
+//        | :? DivinableExaltedCall as o -> (this', type', methodName, arguments) = (o.This, o.Type, o.MethodName, o.Arguments)
+//        | _ -> false
+
+//    interface IDivinable with
+//        member this.DivineExpr diviner =
+//            let this'' =
+//                match this' with
+//                | Some t -> t
+//                | None -> null
+//            let method' = type'.GetMethod methodName
+//            let arguments' = arguments |> Seq.cast |> Seq.toArray
+//            let divinable = method'.Invoke (this'', arguments') :?> IDivinable
+//            divinable.DivineExpr diviner
 
 type DivinableLet (var : DivinableVar, value : IDivinable, body : IDivinable) =
     member this.Var = var
@@ -118,41 +150,41 @@ type DivinableLet (var : DivinableVar, value : IDivinable, body : IDivinable) =
 
     interface IDivinable with
         member this.DivineExpr diviner =
-            let var' : DivinedVar = { Name = var.Name; Type = var.Type }
+            let var' : DivinedVar = { Name = var.Name; TypeName = var.TypeName }
             let value' = value.DivineExpr diviner
-            let body' = value.DivineExpr diviner
+            let body' = body.DivineExpr diviner
             DivinedExpr.DivinedLet { Var = var'; Value = value'; Body = body' }
 
-type DivinableValue (value : obj, type' : Type) =
+type DivinableValue (value : obj, typeName : string) =
     member this.Value = value
-    member this.Type = type'
+    member this.TypeName = typeName
 
     override this.GetHashCode() =
-        hash (value, type')
+        hash (value, typeName)
 
     override this.Equals(other) =
         match other with
-        | :? DivinableValue as o -> (value, type') = (o.Value, o.Type)
+        | :? DivinableValue as o -> (value, typeName) = (o.Value, o.TypeName)
         | _ -> false
 
     interface IDivinable with
         member this.DivineExpr diviner =
-            DivinedExpr.DivinedValue { Value = value; Type = type' }
+            DivinedExpr.DivinedValue { Value = value; TypeName = typeName }
 
-type DivinableVarGet (name : string) =
-    member this.Name = name
+type DivinableVarGet (var : DivinableVar) =
+    member this.Var = var
 
     override this.GetHashCode() =
-        hash name
+        hash var
 
     override this.Equals(other) =
         match other with
-        | :? DivinableVarGet as o -> name = o.Name
+        | :? DivinableVarGet as o -> var = o.Var
         | _ -> false
 
     interface IDivinable with
         member this.DivineExpr diviner =
-            DivinedExpr.DivinedVarGet { Name = name }
+            DivinedExpr.DivinedVarGet { Var = { Name = var.Name; TypeName = var.TypeName } }
 
 type Divined<'T> = {
     Source : DivinedExpr
@@ -160,9 +192,9 @@ type Divined<'T> = {
 }
 
 module Divinable =
-    let divine (diviner : IDiviner) (divinable : IDivinable<'T>) : Divined<'T> =
+    let divine (diviner : IDiviner) (divineContext : DivineContext) (divinable : IDivinable<'T>) : Divined<'T> =
         let divinedExpr = divinable.DivineExpr diviner
-        let value = diviner.Eval divinedExpr
+        let value = diviner.Eval (divinedExpr, divineContext)
 
         {
             Source = divinedExpr
@@ -172,20 +204,23 @@ module Divinable =
     let cast (divinable : IDivinable) : IDivinable<'T> =
         Divinable<'T> divinable :> IDivinable<'T>
 
-    let call (this : IDivinable option, methodName : string, arguments : IDivinable list) : IDivinable =
-        DivinableCall (this, methodName, arguments) :> IDivinable
+    let call (this : IDivinable option, typeName : string, methodName : string, arguments : IDivinable list) : IDivinable =
+        DivinableCall (this, typeName, methodName, arguments) :> IDivinable
+
+    //let exaltedCall (this : obj option, type' : Type, methodName : string, arguments : IDivinable list) : IDivinable =
+    //    DivinableExaltedCall (this, type', methodName, arguments) :> IDivinable
 
     let let' (var : DivinableVar, value : IDivinable, body : IDivinable) : IDivinable =
         DivinableLet (var, value, body) :> IDivinable
 
-    let value (value : obj, type' : Type) : IDivinable =
-        DivinableValue (value, type') :> IDivinable
+    let value (value : obj, typeName : string) : IDivinable =
+        DivinableValue (value, typeName) :> IDivinable
 
-    let var (name : string, type' : Type) : DivinableVar =
-        { Name = name; Type = type' }
+    let var (name : string, typeName : string) : DivinableVar =
+        { Name = name; TypeName = typeName }
 
-    let varGet (name : string) : IDivinable =
-        DivinableVarGet (name) :> IDivinable
+    let varGet (var : DivinableVar) : IDivinable =
+        DivinableVarGet (var) :> IDivinable
 
     //static member Value (value : obj) =
     //    DivinableValue (value) :> IDivinable

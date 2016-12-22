@@ -51,24 +51,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="MethodInfoExtensions.fs" />
     <Compile Include="ExaltedPropertyAttribute.fs" />
     <Compile Include="ExaltedMethodAttribute.fs" />
     <Compile Include="ExaltedOnlyPropertyException.fs" />
     <Compile Include="ExaltedOnlyMethodException.fs" />
-    <Compile Include="DivineVar.fs" />
-    <Compile Include="DivinableValue.fs" />
-    <Compile Include="DivinableVarGet.fs" />
-    <Compile Include="DivinableLet.fs" />
     <Compile Include="DivinableExpr.fs" />
     <Compile Include="Divinable.fs" />
     <Compile Include="IDivinable.fs" />
     <Compile Include="OldDivinable.fs" />
     <Compile Include="IExalter.fs" />
     <Compile Include="Exalter.fs" />
-    <Compile Include="DivineBuilder.fs" />
+    <Compile Include="DivinableBuilder.fs" />
+    <Compile Include="DivinedBuilder.fs" />
     <Compile Include="Diviner.fs" />
-    <Compile Include="Divine.fs" />
-    <Compile Include="DivinableCast.fs" />
+    <Compile Include="TopLevelOperations.fs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

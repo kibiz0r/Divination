@@ -5,23 +5,56 @@ open NUnit.Framework
 open FsUnit
 open Divination
 open FSharp.Quotations
+open FSharp.Quotations.Patterns
+open FSharp.Quotations.Evaluator
+open System.Reflection
+open System.Collections.Generic
 
-type DerpClass () =
-    static member x = 1
-    static member y = 2
+//type DerpClass () =
+//    static member x = 1
+//    static member y = 2
 
-module DerpModule =
-    let x = 3
-    let y = 4
+//module DerpModule =
+//    let x = 3
+//    let y = 4
 
-    let added z =
-        x + y + z
+//    let added z =
+//        x + y + z
 
-    let useList ls =
-        ls |> Seq.map (fun l -> "Hello " + l)
+//    let useList ls =
+//        ls |> Seq.map (fun l -> "Hello " + l)
 
-//[<TestFixture>]
-//module DivineBuilderTest =
+[<TestFixture>]
+module DivinableBuilderTest =
+    let diviner = Diviner ()
+    let divineContext = { DivineContext.Variables = Map.empty }
+    let divine = Divinable.divine diviner divineContext
+
+    [<Test>]
+    let ``DivinableBuilder does something`` () =
+        let divinable =
+            divinable {
+                let hello = "Hello"
+                let world = "World"
+                return hello + " " + world
+            }
+        let divined = divine divinable
+        divined.Value |> should equal "Hello World"
+
+    [<Test>]
+    let ``DivinableBuilder allows combining Divinables`` () =
+        let hello =
+            divinable {
+                return "Hello"
+            }
+        let divinable =
+            divinable {
+                let! h = hello
+                return h + " World"
+            }
+        let divined = divine divinable
+        divined.Value |> should equal "Hello World"
+        
 //    [<Test>]
 //    let ``Playground`` () =
 //        let divinable : IDivinable<int> = Divinable.value 5

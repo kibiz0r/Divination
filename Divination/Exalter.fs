@@ -1,4 +1,4 @@
-﻿namespace Divination
+namespace Divination
 
 open System
 open FSharp.Quotations
@@ -22,13 +22,18 @@ type Exalter () =
         member this.Exalt<'T> (toExalt : Expr<'T>) : IDivinable<'T> =
             let rec exalt expr =
                 match expr with
-                | Let (var, value, body) -> Divinable.let' (Divinable.var (var.Name, var.Type), exalt value, exalt body)
-                | Value (value) -> Divinable.value value
-                | Var (var) -> Divinable.varGet (var.Name)
+                | Let (var, value, body) -> Divinable.let' (Divinable.var (var.Name, var.Type.AssemblyQualifiedName), exalt value, exalt body)
+                | Value (value, type') -> Divinable.value (value, type'.AssemblyQualifiedName)
+                | Var (var) -> Divinable.varGet { Name = var.Name; TypeName = var.Type.AssemblyQualifiedName }
                 | Call (this', methodInfo, arguments) ->
                     let exaltedMethodAttributes = methodInfo.GetCustomAttributes (typeof<ExaltedMethodAttribute>, true)
                     if exaltedMethodAttributes |> Array.isEmpty then
-                        raise (Exception "not exalted")
+                        let this'' =
+                            match this' with
+                            | Some t -> Some (exalt t)
+                            | None -> None
+                        let arguments' = arguments |> List.map (fun a -> exalt a)
+                        Divinable.call (this'', methodInfo.DeclaringType.AssemblyQualifiedName, methodInfo.Name, arguments')
                     else
                         let exaltedMethodName = (exaltedMethodAttributes.[0] :?> ExaltedMethodAttribute).ExaltedMethodName
                         let exaltedMethod = methodInfo.ReflectedType.GetMethod exaltedMethodName
@@ -53,7 +58,7 @@ type Exalter () =
                             ) |> Seq.cast |> Seq.toArray
 
                         exaltedMethod.Invoke (this'', arguments') :?> IDivinable
-                | _ -> raise (Exception "whoops")
+                | _ -> raise (Exception (sprintf "Unrecognized expression %A" expr))
             exalt toExalt |> Divinable.cast
 
         //member this.Exalt<'T> (toExalt : Expr<'T>) : Expr<IDivinable<'T>> =
