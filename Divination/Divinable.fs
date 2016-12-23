@@ -48,18 +48,14 @@ and DivinedVarGetExpr = {
     Var : DivinedVar
 }
 
-type DivineContext = {
-    Variables : Map<DivinedVar, obj>
-}
-
-type IDiviner =
+type IDiviner<'Context when 'Context :> IDiviningContext> =
     //abstract member Let : DivinableLet -> obj
     //abstract member Value : DivinableValue -> obj
     //abstract member VarGet : DivinableVarGet -> obj
-    abstract member Eval : DivinedExpr * DivineContext -> obj
+    abstract member Eval : DivinedExpr * 'Context -> obj
 
 type IDivinable =
-    abstract member DivineExpr : IDiviner -> DivinedExpr
+    abstract member DivineExpr : IDiviner<_> -> DivinedExpr
 
 type IDivinable<'T> =
     inherit IDivinable
@@ -192,9 +188,9 @@ type Divined<'T> = {
 }
 
 module Divinable =
-    let divine (diviner : IDiviner) (divineContext : DivineContext) (divinable : IDivinable<'T>) : Divined<'T> =
+    let divine (diviner : IDiviner<'Context>) (context : 'Context) (divinable : IDivinable<'T>) : Divined<'T> =
         let divinedExpr = divinable.DivineExpr diviner
-        let value = diviner.Eval (divinedExpr, divineContext)
+        let value = diviner.Eval (divinedExpr, context)
 
         {
             Source = divinedExpr

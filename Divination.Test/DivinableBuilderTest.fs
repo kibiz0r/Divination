@@ -27,7 +27,7 @@ open System.Collections.Generic
 [<TestFixture>]
 module DivinableBuilderTest =
     let diviner = Diviner ()
-    let divineContext = { DivineContext.Variables = Map.empty }
+    let divineContext = DiviningContext () :> IDiviningContext
     let divine = Divinable.divine diviner divineContext
 
     [<Test>]

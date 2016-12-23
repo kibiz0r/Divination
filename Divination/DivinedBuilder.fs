@@ -4,7 +4,7 @@ open System
 open FSharp.Quotations
 open FSharp.Quotations.Evaluator
 
-type DivinedBuilder (exalter : IExalter, diviner : IDiviner) =
+type DivinedBuilder (exalter : IExalter, diviner : IDiviner<'Context>, context : 'Context) =
     member this.Bind (divinable : Divinable<'T>, f : 'T -> 'U) : 'U =
         Unchecked.defaultof<'U>
 
@@ -15,4 +15,4 @@ type DivinedBuilder (exalter : IExalter, diviner : IDiviner) =
         obj () :?> Expr<Divinable<'T>>
 
     member this.Run<'T> (expr : Expr<'T>) : Divined<'T> =
-        this.Quote (expr) |> QuotationEvaluator.Evaluate |> Divinable.divine diviner ({ DivineContext.Variables = Map.empty })
+        this.Quote (expr) |> QuotationEvaluator.Evaluate |> Divinable.divine diviner context

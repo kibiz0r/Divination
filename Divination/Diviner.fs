@@ -5,10 +5,10 @@ open MethodInfoExtensions
 
 type Diviner () as this =
     let eval expr context =
-        (this :> IDiviner).Eval (expr, context)
+        (this :> IDiviner<'Context>).Eval (expr, context)
 
-    interface IDiviner with
-        member this.Eval (divinedExpr, divineContext) =
+    interface IDiviner<IDiviningContext> with
+        member this.Eval (divinedExpr, context) =
             match divinedExpr with
             | DivinedExpr.DivinedValue { Value = value; TypeName = typeName } ->
                 let type' = Type.GetType typeName
@@ -17,20 +17,20 @@ type Diviner () as this =
                 else
                     Convert.ChangeType (value, type')
             | DivinedExpr.DivinedLet { Var = var; Value = value; Body = body } ->
-                let value' = eval value divineContext
-                let newContext = { divineContext with Variables = divineContext.Variables |> Map.add var value' }
+                let value' = eval value context
+                let newContext = context.SetVar (var.Name, value')
                 eval body newContext
             | DivinedExpr.DivinedCall { This = this'; TypeName = typeName; MethodName = methodName; Arguments = arguments } ->
                 let this'' =
                     match this' with
-                    | Some t -> eval t divineContext
+                    | Some t -> eval t context
                     | None -> null
                 let type' = Type.GetType typeName
                 let methodInfo = type'.GetMethod methodName
-                let arguments' = arguments |> List.map (fun a -> eval a divineContext) |> List.toArray
+                let arguments' = arguments |> List.map (fun a -> eval a context) |> List.toArray
                 methodInfo.InvokeGeneric<string> (this'', arguments')
             | DivinedExpr.DivinedVarGet { Var = var } ->
-                divineContext.Variables.[var]
+                context.GetVar var.Name
             | _ ->
                 raise (Exception (sprintf "Unknown expression type: %A" divinedExpr))
 

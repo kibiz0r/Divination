@@ -17,9 +17,9 @@ open FSharp.Interop.Dynamic
 
 [<TestFixture>]
 module DivinerTest =
-    let diviner = Diviner () :> IDiviner
-    let divineContext = { DivineContext.Variables = Map.empty }
-    let divine = Divinable.divine diviner divineContext
+    let diviner = Diviner () :> IDiviner<_>
+    let context = DiviningContext () :> IDiviningContext
+    let divine = Divinable.divine diviner context
 
     [<Test>]
     let ``Diviner does stuff`` () =

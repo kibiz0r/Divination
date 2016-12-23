@@ -57,6 +57,7 @@
     <Compile Include="ExaltedOnlyPropertyException.fs" />
     <Compile Include="ExaltedOnlyMethodException.fs" />
     <Compile Include="DivinableExpr.fs" />
+    <Compile Include="IDiviningContext.fs" />
     <Compile Include="Divinable.fs" />
     <Compile Include="IDivinable.fs" />
     <Compile Include="OldDivinable.fs" />
@@ -65,6 +66,7 @@
     <Compile Include="DivinableBuilder.fs" />
     <Compile Include="DivinedBuilder.fs" />
     <Compile Include="Diviner.fs" />
+    <Compile Include="DiviningContext.fs" />
     <Compile Include="TopLevelOperations.fs" />
   </ItemGroup>
   <ItemGroup>
