@@ -4,6 +4,7 @@ open System
 open NUnit.Framework
 open FsUnit
 open Divination
+open Divination.FSharp
 open FSharp.Quotations
 open FSharp.Quotations.Evaluator
 open FSharp.Interop.Dynamic
@@ -16,14 +17,14 @@ open FSharp.Interop.Dynamic
 // Since we cannot know what sort of context the Divinable ultimately needs, nor what the IDiviner provides, we pass it off to the IDiviner according to its union case
 
 [<TestFixture>]
-module DivinerTest =
-    let diviner = Diviner () :> IDiviner<_>
-    let context = DiviningContext () :> IDiviningContext
+module FSharpDivinerTest =
+    let diviner = FSharpDiviner () :> IFSharpDiviner
+    let context = FSharpDiviningContext () :> IFSharpDiviningContext
     let divine = Divinable.divine diviner context
 
     [<Test>]
-    let ``Diviner does stuff`` () =
-        let divinable = Divinable.value (5, typeof<int>.FullName) |> Divinable.cast
+    let ``FSharpDiviner does stuff`` () =
+        let divinable = FSharpDivinable.value (5, typeof<int>) |> Divinable.cast
         let divined : Divined<int> = divine divinable
-        let expected : Divined<int> = { Source = DivinedExpr.DivinedValue { Value = 5; TypeName = typeof<int>.FullName }; Value = 5 }
+        let expected : Divined<int> = { Source = FSharpExpr.FSharpValue { Value = 5; Type = typeof<int> }; Value = 5 }
         divined |> should equal expected

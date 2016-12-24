@@ -1,8 +1,19 @@
 ﻿namespace Divination
 
-type ExaltedExpr =
-    | ExaltedValue of obj
-    | ExaltedCall of ExaltedExpr option * string * ExaltedExpr list
+open System
+
+module ``DivinableExpr is dead`` =
+    let x = 5
+
+//type DivinableExpr<'T> = {
+//    Raw : IDivinableExpr
+//} with
+//    interface IDivinableExpr<'T>
+
+//module DivinableExpr =
+//    let cast (raw : IDivinableExpr) : IDivinableExpr<'T> =
+//        let d : DivinableExpr<'T> = { Raw = raw }
+//        d :> IDivinableExpr<'T>
 
 //type DivinableExpr<'T> (raw : DivinableExpr) =
 //    member this.Raw = raw

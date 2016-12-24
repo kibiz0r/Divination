@@ -24,36 +24,36 @@ open System.Collections.Generic
 //    let useList ls =
 //        ls |> Seq.map (fun l -> "Hello " + l)
 
-[<TestFixture>]
-module DivinableBuilderTest =
-    let diviner = Diviner ()
-    let divineContext = DiviningContext () :> IDiviningContext
-    let divine = Divinable.divine diviner divineContext
+module ``DivinableBuilder is dead`` =
+    let x = 5
+    //let diviner = Diviner ()
+    //let divineContext = DiviningContext () :> IDiviningContext
+    //let divine = Divinable.divine diviner divineContext
 
-    [<Test>]
-    let ``DivinableBuilder does something`` () =
-        let divinable =
-            divinable {
-                let hello = "Hello"
-                let world = "World"
-                return hello + " " + world
-            }
-        let divined = divine divinable
-        divined.Value |> should equal "Hello World"
+    //[<Test>]
+    //let ``DivinableBuilder does something`` () =
+    //    let divinable =
+    //        divinable {
+    //            let hello = "Hello"
+    //            let world = "World"
+    //            return hello + " " + world
+    //        }
+    //    let divined = divine divinable
+    //    divined.Value |> should equal "Hello World"
 
-    [<Test>]
-    let ``DivinableBuilder allows combining Divinables`` () =
-        let hello =
-            divinable {
-                return "Hello"
-            }
-        let divinable =
-            divinable {
-                let! h = hello
-                return h + " World"
-            }
-        let divined = divine divinable
-        divined.Value |> should equal "Hello World"
+    //[<Test>]
+    //let ``DivinableBuilder allows combining Divinables`` () =
+    //    let hello =
+    //        divinable {
+    //            return "Hello"
+    //        }
+    //    let divinable =
+    //        divinable {
+    //            let! h = hello
+    //            return h + " World"
+    //        }
+    //    let divined = divine divinable
+    //    divined.Value |> should equal "Hello World"
         
 //    [<Test>]
 //    let ``Playground`` () =

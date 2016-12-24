@@ -51,26 +51,42 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="IDivineVar.fs" />
+    <Compile Include="IDivineExpr.fs" />
+    <Compile Include="IDiviningContext.fs" />
+    <Compile Include="IDiviner.fs" />
+    <Compile Include="Divined.fs" />
+    <Compile Include="IDivinable.fs" />
+    <Compile Include="IExalter.fs" />
+    <Compile Include="Divinable.fs" />
+    <Compile Include="Exalter.fs" />
+    <Compile Include="Diviner.fs" />
     <Compile Include="MethodInfoExtensions.fs" />
     <Compile Include="ExaltedPropertyAttribute.fs" />
     <Compile Include="ExaltedMethodAttribute.fs" />
     <Compile Include="ExaltedOnlyPropertyException.fs" />
     <Compile Include="ExaltedOnlyMethodException.fs" />
-    <Compile Include="DivinableExpr.fs" />
-    <Compile Include="IDiviningContext.fs" />
-    <Compile Include="Divinable.fs" />
-    <Compile Include="IDivinable.fs" />
-    <Compile Include="OldDivinable.fs" />
-    <Compile Include="IExalter.fs" />
-    <Compile Include="Exalter.fs" />
-    <Compile Include="DivinableBuilder.fs" />
-    <Compile Include="DivinedBuilder.fs" />
-    <Compile Include="Diviner.fs" />
-    <Compile Include="DiviningContext.fs" />
-    <Compile Include="TopLevelOperations.fs" />
+    <Compile Include="_IDivinableVar.fs" />
+    <Compile Include="_DivinableExpr.fs" />
+    <Compile Include="_OldDivinable.fs" />
+    <Compile Include="_DivinableBuilder.fs" />
+    <Compile Include="_DivinedBuilder.fs" />
+    <Compile Include="_DiviningContext.fs" />
+    <Compile Include="FSharp\FSharpExpr.fs" />
+    <Compile Include="FSharp\IFSharpDiviningContext.fs" />
+    <Compile Include="FSharp\IFSharpDiviner.fs" />
+    <Compile Include="FSharp\FSharpDiviningContext.fs" />
+    <Compile Include="FSharp\FSharpDiviner.fs" />
+    <Compile Include="FSharp\FSharpDivinable.fs" />
+    <Compile Include="FSharp\FSharpExalter.fs" />
+    <Compile Include="FSharp\FSharpDivineBuilder.fs" />
+    <Compile Include="FSharp\TopLevelOperations.fs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="FSharp\" />
   </ItemGroup>
   <Import Project="$(FSharpTargetsPath)" />
 </Project>

@@ -6,60 +6,84 @@ open FSharp.Quotations.Patterns
 open FSharp.Quotations.ExprShape
 open FSharp.Quotations.Evaluator
 
-type Exalter () =
-    let iDivinableType = typeof<IDivinable>
-    let iDivinableGenericType = typeof<IDivinable<obj>>.GetGenericTypeDefinition ()
+module Exalter =
+    let rec traverse (exalter : IExalter<_, _, _, _, _, 'Expr>) (toTraverse : Expr) : 'Expr =
+        let traverse = traverse exalter
+        match toTraverse with
+        | Call (this', methodInfo, arguments) ->
+            let this'' =
+                match this' with
+                | Some t -> Some (traverse t)
+                | None -> None
+            let arguments' = arguments |> List.map (fun a -> traverse a)
+            exalter.Call (this'', exalter.MethodInfo methodInfo, arguments')
+        | Let (var, value, body) ->
+            exalter.Let (exalter.Var var, traverse value,  traverse body)
+        | Value (value, type') ->
+            let type'' = exalter.Type type'
+            exalter.Value (exalter.Primitive (value, type''), type'')
+        | Var (var) ->
+            exalter.VarGet (exalter.Var var)
+        | _ ->
+            raise (Exception (sprintf "Unrecognized expression %A" toTraverse))
 
-    let divinableCastMethodInfo =
-        match <@@ Divinable.cast @@> with
-        | Lambda (_, Call (None, methodInfo, _)) -> methodInfo.GetGenericMethodDefinition ()
-        | _ -> raise (Exception "whoops")
-    let divinableCast (divinable : IDivinable) (type' : Type) : IDivinable =
-        let typedMethod = divinableCastMethodInfo.MakeGenericMethod [|type'|]
-        typedMethod.Invoke (None, [|divinable|]) :?> IDivinable
+    let exalt (exalter : IExalter<'Exalted, 'Primitive, 'Type, 'MethodInfo, 'Var, 'Expr>) (toExalt : Expr) : 'Exalted =
+        exalter.Exalt (traverse exalter toExalt)
 
-    interface IExalter with
-        member this.Exalt<'T> (toExalt : Expr<'T>) : IDivinable<'T> =
-            let rec exalt expr =
-                match expr with
-                | Let (var, value, body) -> Divinable.let' (Divinable.var (var.Name, var.Type.AssemblyQualifiedName), exalt value, exalt body)
-                | Value (value, type') -> Divinable.value (value, type'.AssemblyQualifiedName)
-                | Var (var) -> Divinable.varGet { Name = var.Name; TypeName = var.Type.AssemblyQualifiedName }
-                | Call (this', methodInfo, arguments) ->
-                    let exaltedMethodAttributes = methodInfo.GetCustomAttributes (typeof<ExaltedMethodAttribute>, true)
-                    if exaltedMethodAttributes |> Array.isEmpty then
-                        let this'' =
-                            match this' with
-                            | Some t -> Some (exalt t)
-                            | None -> None
-                        let arguments' = arguments |> List.map (fun a -> exalt a)
-                        Divinable.call (this'', methodInfo.DeclaringType.AssemblyQualifiedName, methodInfo.Name, arguments')
-                    else
-                        let exaltedMethodName = (exaltedMethodAttributes.[0] :?> ExaltedMethodAttribute).ExaltedMethodName
-                        let exaltedMethod = methodInfo.ReflectedType.GetMethod exaltedMethodName
+//type Exalter () =
+//    let iDivinableType = typeof<IDivinable>
+//    let iDivinableGenericType = typeof<IDivinable<obj>>.GetGenericTypeDefinition ()
 
-                        if exaltedMethod.IsGenericMethodDefinition then
-                            raise (InvalidOperationException "Exalted methods must not be generic")
+//    let divinableCastMethodInfo =
+//        match <@@ Divinable.cast @@> with
+//        | Lambda (_, Call (None, methodInfo, _)) -> methodInfo.GetGenericMethodDefinition ()
+//        | _ -> raise (Exception "whoops")
+//    let divinableCast (divinable : IDivinable) (type' : Type) : IDivinable =
+//        let typedMethod = divinableCastMethodInfo.MakeGenericMethod [|type'|]
+//        typedMethod.Invoke (None, [|divinable|]) :?> IDivinable
 
-                        let this'' : obj = null
+//    interface IExalter with
+//        member this.Exalt<'T> (toExalt : Expr<'T>) : IDivinable<'T> =
+//            let rec exalt expr =
+//                match expr with
+//                | Let (var, value, body) -> Divinable.let' (Divinable.var (var.Name, var.Type.AssemblyQualifiedName), exalt value, exalt body)
+//                | Value (value, type') -> Divinable.value (value, type'.AssemblyQualifiedName)
+//                | Var (var) -> Divinable.varGet { Name = var.Name; TypeName = var.Type.AssemblyQualifiedName }
+//                | Call (this', methodInfo, arguments) ->
+//                    let exaltedMethodAttributes = methodInfo.GetCustomAttributes (typeof<ExaltedMethodAttribute>, true)
+//                    if exaltedMethodAttributes |> Array.isEmpty then
+//                        let this'' =
+//                            match this' with
+//                            | Some t -> Some (exalt t)
+//                            | None -> None
+//                        let arguments' = arguments |> List.map (fun a -> exalt a)
+//                        Divinable.call (this'', methodInfo.DeclaringType.AssemblyQualifiedName, methodInfo.Name, arguments')
+//                    else
+//                        let exaltedMethodName = (exaltedMethodAttributes.[0] :?> ExaltedMethodAttribute).ExaltedMethodName
+//                        let exaltedMethod = methodInfo.ReflectedType.GetMethod exaltedMethodName
 
-                        let exaltedMethodParameters = exaltedMethod.GetParameters ()
-                        let arguments' : obj [] =
-                            Seq.zip exaltedMethodParameters arguments
-                            |> Seq.map (fun (parameter, argument) ->
-                                let parameterType = parameter.ParameterType
-                                if not <| iDivinableType.IsAssignableFrom parameterType then
-                                    raise (ArgumentException ("Exalted parameters must accept IDivinable or a specific IDivinable<'T>", parameter.Name))
-                                let exalted = exalt argument
-                                if parameterType.IsGenericType then
-                                    divinableCast exalted parameterType.GenericTypeArguments.[0]
-                                else
-                                    exalted
-                            ) |> Seq.cast |> Seq.toArray
+//                        if exaltedMethod.IsGenericMethodDefinition then
+//                            raise (InvalidOperationException "Exalted methods must not be generic")
 
-                        exaltedMethod.Invoke (this'', arguments') :?> IDivinable
-                | _ -> raise (Exception (sprintf "Unrecognized expression %A" expr))
-            exalt toExalt |> Divinable.cast
+//                        let this'' : obj = null
+
+//                        let exaltedMethodParameters = exaltedMethod.GetParameters ()
+//                        let arguments' : obj [] =
+//                            Seq.zip exaltedMethodParameters arguments
+//                            |> Seq.map (fun (parameter, argument) ->
+//                                let parameterType = parameter.ParameterType
+//                                if not <| iDivinableType.IsAssignableFrom parameterType then
+//                                    raise (ArgumentException ("Exalted parameters must accept IDivinable or a specific IDivinable<'T>", parameter.Name))
+//                                let exalted = exalt argument
+//                                if parameterType.IsGenericType then
+//                                    divinableCast exalted parameterType.GenericTypeArguments.[0]
+//                                else
+//                                    exalted
+//                            ) |> Seq.cast |> Seq.toArray
+
+//                        exaltedMethod.Invoke (this'', arguments') :?> IDivinable
+//                | _ -> raise (Exception (sprintf "Unrecognized expression %A" expr))
+//            exalt toExalt |> Divinable.cast
 
         //member this.Exalt<'T> (toExalt : Expr<'T>) : Expr<IDivinable<'T>> =
         //    let rec exalt e =
