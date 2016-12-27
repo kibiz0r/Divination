@@ -21,15 +21,17 @@ module FSharpExalterTest =
                     let x : int = 5
                     x
                 @>
+        printfn "%A" exalted
         let x = FSharpExpr.var (Var ("x", typeof<int>))
-        let expected : FSharpExpr<int> =
+        let expected : FSharpDivinable =
             FSharpExpr.let'
                 (
                     x,
                     FSharpExpr.value (5, typeof<int>),
                     FSharpExpr.varGet (x)
                 )
-            |> FSharpExpr.cast
+            |> FSharpDivinable.fromExpr
+        printfn "%A" expected
         exalted |> should equal expected
 
     //let operatorsTypeName =

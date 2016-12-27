@@ -5,11 +5,25 @@ open System.Reflection
 open Divination
 open FSharp.Quotations
 
-[<StructuralEquality; StructuralComparison>]
+[<CustomEquality; CustomComparison>]
 type FSharpVar = {
     Var : Var
 } with
     interface IDivineVar
+
+    interface IComparable with
+        member this.CompareTo other =
+              match other with
+              | :? FSharpVar as o -> compare (this.Var.Name, this.Var.Type.AssemblyQualifiedName, this.Var.IsMutable) (o.Var.Name, o.Var.Type.AssemblyQualifiedName, o.Var.IsMutable)
+              | _ -> invalidArg "other" "cannot compare values of different types"
+
+    override this.Equals other =
+        match other with
+        | :? FSharpVar as o -> (this.Var.Name, this.Var.Type, this.Var.IsMutable) = (o.Var.Name, o.Var.Type, o.Var.IsMutable)
+        | _ -> false
+
+    override this.GetHashCode () =
+        hash (this.Var.Name, this.Var.Type, this.Var.IsMutable)
 
 type FSharpCall = {
     This : IDivineExpr option
