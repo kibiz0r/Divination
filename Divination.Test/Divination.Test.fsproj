@@ -59,13 +59,9 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FSharpExalterTest.fs" />
-    <Compile Include="FSharpDivinerTest.fs" />
-    <Compile Include="FSharpDivineBuilderTest.fs" />
-    <Compile Include="_DivinableBuilderTest.fs" />
+    <Compile Include="DivinableBuilderTest.fs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="_DivinedBuilderTest.fs" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
