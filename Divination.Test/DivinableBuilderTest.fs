@@ -30,6 +30,9 @@ module MyModule =
 
 [<TestFixture>]
 module DivinableBuilderTest =
+    let divine divinable =
+        Diviner.divine (Diviner ()) divinable
+
     [<SetUp>]
     let setUp () =
         MyModule.myNum <- 1
@@ -40,7 +43,7 @@ module DivinableBuilderTest =
             divinable {
                 return 5
             }
-        divinable.Value |> should equal 5
+        divine divinable |> should equal 5
 
     [<Test>]
     let ``divinable does further stuff`` () =
@@ -54,15 +57,15 @@ module DivinableBuilderTest =
                     r
                 )
             }
-        divinable1.Value |> should equal 2
+        divine divinable1 |> should equal 2
         MyModule.myNum <- 2
         let divinable2 =
             divinable {
                 let! x = MyModule.getADivinable MyModule.myNum
                 return x
             }
-        divinable1.Value |> should equal 4
-        divinable2.Value |> should equal 4
+        divine divinable1 |> should equal 4
+        divine divinable2 |> should equal 4
 
     [<Test>]
     let ``divinable doesn't break when using simple lets`` () =
@@ -71,15 +74,15 @@ module DivinableBuilderTest =
                 let! x = MyModule.getALetDivinable ()
                 return x
             }
-        divinable1.Value |> should equal 1
+        divine divinable1 |> should equal 1
         MyModule.myNum <- 2
         let divinable2 =
             divinable {
                 let! x = MyModule.getALetDivinable ()
                 return x
             }
-        divinable1.Value |> should equal 2
-        divinable2.Value |> should equal 2
+        divine divinable1 |> should equal 2
+        divine divinable2 |> should equal 2
 
     [<Test>]
     let ``divinable doesn't break when using lets on calls`` () =
@@ -88,12 +91,12 @@ module DivinableBuilderTest =
                 let! x = MyModule.getALetCallDivinable ()
                 return x
             }
-        divinable1.Value |> should equal 1
+        divine divinable1 |> should equal 1
         MyModule.myNum <- 2
         let divinable2 =
             divinable {
                 let! x = MyModule.getALetCallDivinable ()
                 return x
             }
-        divinable1.Value |> should equal 2
-        divinable2.Value |> should equal 2
+        divine divinable1 |> should equal 2
+        divine divinable2 |> should equal 2

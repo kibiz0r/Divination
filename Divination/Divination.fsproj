@@ -51,6 +51,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="IDiviner.fs" />
+    <Compile Include="IDivinable.fs" />
+    <Compile Include="Diviner.fs" />
+    <Compile Include="BindDivinable.fs" />
+    <Compile Include="ExprDivinable.fs" />
+    <Compile Include="UnwrapDivinable.fs" />
     <Compile Include="Divinable.fs" />
     <Compile Include="DivinableBuilder.fs" />
     <Compile Include="TopLevelOperations.fs" />
