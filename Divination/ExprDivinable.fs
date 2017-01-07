@@ -5,5 +5,5 @@ open FSharp.Quotations
 
 type ExprDivinable<'T> (expr : Expr<'T>) =
     interface IDivinable<'T> with
-        member this.Identity diviner =
+        member this.Identify diviner =
             expr :> obj

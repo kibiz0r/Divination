@@ -53,6 +53,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="IDiviner.fs" />
     <Compile Include="IDivinable.fs" />
+    <Compile Include="Divined.fs" />
     <Compile Include="Diviner.fs" />
     <Compile Include="BindDivinable.fs" />
     <Compile Include="ExprDivinable.fs" />

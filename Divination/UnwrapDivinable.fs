@@ -2,7 +2,7 @@
 
 open System
 
-type UnwrapDivinable<'T> (divinable : IDivinable<IDivinable<'T>>) =
+type UnwrapDivinable<'T> (wrappedDivinable : IDivinable<IDivinable<'T>>) =
     interface IDivinable<'T> with
-        member this.Identity diviner =
-            (Diviner.divine diviner divinable).Identity diviner
+        member this.Identify diviner =
+            Diviner.identifyAndDivineValue diviner wrappedDivinable |> Diviner.identify diviner
