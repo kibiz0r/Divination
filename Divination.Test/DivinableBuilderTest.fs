@@ -31,7 +31,7 @@ module MyModule =
 [<TestFixture>]
 module DivinableBuilderTest =
     let divineValue divinable =
-        Diviner.identifyAndDivineValue (Diviner ()) divinable
+        Diviner.value (FSharpDiviner ()) divinable
 
     [<SetUp>]
     let setUp () =

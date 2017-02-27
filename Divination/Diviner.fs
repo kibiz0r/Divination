@@ -1,36 +1,55 @@
 ﻿namespace Divination
 
 open System
+open System.Reflection
 open FSharp.Interop.Dynamic
 open FSharp.Quotations
 open FSharp.Quotations.Evaluator
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Diviner =
-    let identify (diviner : IDiviner) (divinable : IDivinable<'T>) : obj =
+    let identify (diviner : IDiviner) (divinable : IDivinable<'T>) : Identity =
         divinable.Identify diviner
 
-    let divine (diviner : IDiviner) (identity : obj) : Divined<'T> =
-        let value : 'T = diviner?Divine identity
-        { Identity = identity; Value = value }
+    let rec resolve (diviner : IDiviner) (identity : Identity) : 'T =
+        match identity with
+        | Identifier identifier ->
+            diviner?Identifier identifier
+        | CallIdentity (this, methodObj, arguments) ->
+            diviner?CallIdentity (this, methodObj, arguments)
+        | ConstructorIdentity (ctorObj, arguments) ->
+            diviner?ConstructorIdentity (ctorObj, arguments)
+        | PropertyGetIdentity (this, propertydObj, arguments) ->
+            diviner?PropertyGetIdentity (this, propertydObj, arguments)
 
-    let identifyAndDivine (diviner : IDiviner) (divinable : IDivinable<'T>) : Divined<'T> =
-        identify diviner divinable |> divine diviner
+    let value (diviner : IDiviner) (divinable : IDivinable<'T>) : 'T =
+        identify diviner divinable |> resolve diviner
 
-    let identifyAndDivineValue (diviner : IDiviner) (divinable : IDivinable<'T>) : 'T =
-        (identifyAndDivine diviner divinable).Value
+    let divine (diviner : IDiviner) (divinable : IDivinable<'T>) : Divined<'T> =
+        let identity = identify diviner divinable
+        try
+            let value = resolve diviner identity
+            DivinedValue (identity, value)
+        with
+            | e -> DivinedException (identity, e)
 
-type Diviner () =
+type FSharpDiviner () =
     interface IDiviner
 
-    member this.Divine<'T> (expr : Expr<'T>) : 'T =
-        expr |> QuotationEvaluator.Evaluate
+    abstract member Identifier<'T> : obj -> 'T
+    default this.Identifier (identifier : obj) : 'T =
+        raise (NotImplementedException ())
 
-    member this.Divine<'T> (wrapped : IDivinable<IDivinable<'T>>) : 'T =
-        wrapped |> Diviner.identifyAndDivineValue this |> Diviner.identifyAndDivineValue this
+    abstract member CallIdentity<'T> : Identity option * MethodInfo * Identity list -> 'T
+    default this.CallIdentity<'T> (this' : Identity option, methodInfo : MethodInfo, arguments : Identity list) : 'T =
+        let this'' =
+            match this' with
+            | Some t -> Diviner.resolve this t
+            | None -> null
+        let arguments' = List.map (Diviner.resolve this) arguments |> List.toArray
+        methodInfo.Invoke (this'', arguments') :?> 'T
 
-    //member this.Divine<'T> (unwrapDivinable : UnwrapDivinable<'T>) : 'T =
-    //    Diviner.divine this unwrapDivinable.Wrapped |> Diviner.divine this
-
-    //member this.Divine<'T, 'U> (callDivinable : CallDivinable<'T, 'U>) : 'U =
-    //    Diviner.divine this callDivinable.Argument |> callDivinable.Body
+    abstract member ConstructorIdentity<'T> : ConstructorInfo * Identity list -> 'T
+    default this.ConstructorIdentity<'T> (constructorInfo : ConstructorInfo, arguments : Identity list) : 'T =
+        let arguments' = List.map (Diviner.resolve this) arguments |> List.toArray
+        constructorInfo.Invoke (arguments') :?> 'T

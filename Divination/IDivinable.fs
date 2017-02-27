@@ -11,4 +11,7 @@ open System
 type IDivinable<'T> =
     // The divinable is only given a diviner for computing its identity so that divinables can be identified in terms
     // of other divinables while remaining lazily-evaluated
-    abstract member Identify : IDiviner -> obj
+    abstract member Identify : IDiviner -> Identity
+
+//type IDivinable<'T, 'Identifier, 'MethodIdentifier> =
+//    abstract member Identify : IDiviner<'Identifier, 'MethodIdentifier> -> Identity<'Identifier, 'MethodIdentifier>
