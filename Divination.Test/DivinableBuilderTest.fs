@@ -130,4 +130,8 @@ module DivinableBuilderTest =
                 // or be a stable foundation for further chains... really the same problem as above, except that here
                 // the value may not be computable, whereas above the value may differ from what would be computed inline
         }
+        // It really seems like there are two things that Divination are trying to accomplish:
+        //   1. Execute normal code, where variables are tracked by identity in the background, and optionally made
+        //      available outside of the scope.
+        //   2. Materialize Identities into concrete values of a specific type, within a given context.
         ()
