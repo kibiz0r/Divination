@@ -2,33 +2,30 @@
 
 open System
 open System.Reflection
-open FSharp.Interop.Dynamic
-open FSharp.Quotations
-open FSharp.Quotations.Evaluator
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Diviner =
-    let identify (diviner : IDiviner) (divinable : IDivinable<'T>) : Identity =
+    let identify (divinable : IDivinable<'T, _, _, _, _, _>) (diviner : IDiviner<_, _, _, _, _>) : Identity<_, _, _, _, _> =
         divinable.Identify diviner
 
-    let rec resolve (diviner : IDiviner) (identity : Identity) : 'T =
+    let rec resolve (identity : Identity<_, _, _, _, _>) (diviner : IDiviner<_, _, _, _, _>) : 'T =
         match identity with
         | Identifier identifier ->
-            diviner?Identifier identifier
-        | CallIdentity (this, methodObj, arguments) ->
-            diviner?CallIdentity (this, methodObj, arguments)
-        | ConstructorIdentity (ctorObj, arguments) ->
-            diviner?ConstructorIdentity (ctorObj, arguments)
-        | PropertyGetIdentity (this, propertydObj, arguments) ->
-            diviner?PropertyGetIdentity (this, propertydObj, arguments)
+            diviner.Identifier identifier
+        | CallIdentity (this, methodInfo, arguments) ->
+            diviner.Call (this, methodInfo, arguments)
+        | ConstructorIdentity (constructorInfo, arguments) ->
+            diviner.Constructor (constructorInfo, arguments)
+        | PropertyGetIdentity (this, propertydInfo, arguments) ->
+            diviner.PropertyGet (this, propertydInfo, arguments)
 
-    let value (diviner : IDiviner) (divinable : IDivinable<'T>) : 'T =
-        identify diviner divinable |> resolve diviner
+    let value (divinable : IDivinable<'T, _, _, _, _, _>) (diviner : IDiviner<_, _, _, _, _>) : 'T =
+        resolve (identify divinable diviner) diviner
 
-    let divine (diviner : IDiviner) (divinable : IDivinable<'T>) : Divined<'T> =
-        let identity = identify diviner divinable
+    let divine (diviner : IDiviner<_, _, _, _, _>) (divinable : IDivinable<'T, _, _, _, _, _>) : Divined<'T, _, _, _, _, _> =
+        let identity = identify divinable diviner
         try
-            let value = resolve diviner identity
+            let value = resolve identity diviner
             DivinedValue (identity, value)
         with
             | e -> DivinedException (identity, e)

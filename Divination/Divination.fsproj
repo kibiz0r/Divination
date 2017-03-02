@@ -42,17 +42,14 @@
     <Reference Include="Dynamitey">
       <HintPath>..\packages\Dynamitey.1.0.2.0\lib\net40\Dynamitey.dll</HintPath>
     </Reference>
-    <Reference Include="FSharp.Interop.Dynamic">
-      <HintPath>..\packages\FSharp.Interop.Dynamic.3.0.0.0\lib\portable-net45+sl50+win\FSharp.Interop.Dynamic.dll</HintPath>
-    </Reference>
     <Reference Include="FSharp.Core">
       <HintPath>..\packages\FSharp.Core.4.0.0.1\lib\net40\FSharp.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="IDiviner.fs" />
     <Compile Include="Identity.fs" />
+    <Compile Include="IDiviner.fs" />
     <Compile Include="IDivinable.fs" />
     <Compile Include="Divined.fs" />
     <Compile Include="Diviner.fs" />
@@ -62,8 +59,6 @@
     <Compile Include="Divinable.fs" />
     <Compile Include="DivinableBuilder.fs" />
     <Compile Include="TopLevelOperations.fs" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(FSharpTargetsPath)" />
