@@ -9,8 +9,9 @@ open System.Reflection
 //    Common identities include:
 //    - Expr<'T>
 type IDivinable<'T, 'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> =
-    // The divinable is only given a diviner for computing its identity so that divinables can be identified in terms
-    // of other divinables while remaining lazily-evaluated
+    // It doesn't seem like this signature is quite right anymore...
+    // It's more like it needs to accept a "Binding" or something, which can translate Identities across stack frames
+    // so that they maintain coherence.
     abstract member Identify : IDiviner<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> -> Identity<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>
 
 type IDivinable<'T, 'Identifier, 'Value> = IDivinable<'T, 'Identifier, 'Value, ConstructorInfo, MethodInfo, PropertyInfo>
