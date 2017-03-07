@@ -5,7 +5,8 @@ open FSharp.Quotations
 open FSharp.Quotations.Patterns
 open FSharp.Quotations.Evaluator
 
-type DivinableBuilder () =
+// DivineBuilder wraps a DivinableBuilder and invokes it with the current Diviner and an empty DivinationBinding
+type DivineBuilder (divinableBuilder : DivinableBuilder) =
     member this.Bind ([<ReflectedDefinition>] divinableExpr : Expr<IDivinable<'T>>, body : 'T -> IDivinable<'U>) : IDivinable<'U> =
         obj () :?> IDivinable<'U>
         //Divinable.expr divinableExpr
@@ -18,8 +19,6 @@ type DivinableBuilder () =
             | NewObject (constructorInfo, arguments) ->
                 let arguments' = List.map exprToIdentity arguments
                 ConstructorIdentity (constructorInfo, arguments')
-            | Value (value, type') ->
-                ValueIdentity (value, type')
             | _ ->
-                invalidOp (expr.ToString ())
+                invalidOp (returnExpr.ToString ())
         Divinable<'T> (fun diviner -> exprToIdentity returnExpr) :> IDivinable<'T>

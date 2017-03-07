@@ -3,18 +3,20 @@
 open System
 open System.Reflection
 
-// A divinable has two components:
-// 1: Its type, which is what it resolves to through use of a diviner
-// 2: Its identity, which is expected to be immutable and serializable
-//    Common identities include:
-//    - Expr<'T>
-type IDivinable<'T, 'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> =
-    // It doesn't seem like this signature is quite right anymore...
-    // It's more like it needs to accept a "Binding" or something, which can translate Identities across stack frames
-    // so that they maintain coherence.
-    abstract member Identify : IDiviner<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> -> Identity<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>
+// A Divinable is a yet-to-be-materialized object, that is destined to be a particular type, and has a particular
+// Identity, but may need to phrase that Identity in terms of other Identities that are not known to it at the time
+// when the Divinable is first created. Once that Identity is fully formed, that plus the designation of its type is
+// enough for a Diviner to resolve it to an instance.
+type IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> =
+    // The Identity Binding helps the Divinable structure its Identity in terms of other Identities that are known to
+    // the caller but not known to the Divinable.
+    abstract member Divine : IDiviner<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>
+        * IDivinationBinding<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>
+        -> Divined<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>
 
-type IDivinable<'T, 'Identifier, 'Value> = IDivinable<'T, 'Identifier, 'Value, ConstructorInfo, MethodInfo, PropertyInfo>
+type IDivinable<'T, 'Identifier, 'Value, 'Type> = IDivinable<'T, 'Identifier, 'Value, 'Type, ConstructorInfo, MethodInfo, PropertyInfo>
+
+type IDivinable<'T, 'Identifier, 'Value> = IDivinable<'T, 'Identifier, 'Value, Type>
 
 type IDivinable<'T, 'Identifier> = IDivinable<'T, 'Identifier, obj>
 

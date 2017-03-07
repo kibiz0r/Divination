@@ -30,8 +30,8 @@ module MyModule =
 
 [<TestFixture>]
 module DivinableBuilderTest =
-    let divineValue divinable =
-        Diviner.value (FSharpDiviner ()) divinable
+    let divineValue (divinable : IDivinable<'T>) =
+        (divinable.Divine (Diviner.Current, DivinationBinding.empty ())).Value
 
     [<SetUp>]
     let setUp () =
@@ -100,7 +100,7 @@ module DivinableBuilderTest =
             }
         divineValue divinable1 |> should equal 2
         divineValue divinable2 |> should equal 2
-
+        #if NOPE
     [<Test>]
     let ``Maybe it should work like this?`` () =
         divinable {
@@ -135,3 +135,4 @@ module DivinableBuilderTest =
         //      available outside of the scope.
         //   2. Materialize Identities into concrete values of a specific type, within a given context.
         ()
+        #endif

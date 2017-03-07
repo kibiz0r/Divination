@@ -57,18 +57,46 @@
       <HintPath>..\packages\FSharp.Interop.Dynamic.3.0.0.0\lib\portable-net45+sl50+win\FSharp.Interop.Dynamic.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="DivinableBuilderTest.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <Reference Include="System.Reactive.Interfaces">
+      <HintPath>..\packages\System.Reactive.Interfaces.3.0.0\lib\net45\System.Reactive.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Core">
+      <HintPath>..\packages\System.Reactive.Core.3.0.0\lib\net45\System.Reactive.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Linq">
+      <HintPath>..\packages\System.Reactive.Linq.3.0.0\lib\net45\System.Reactive.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.PlatformServices">
+      <HintPath>..\packages\System.Reactive.PlatformServices.3.0.0\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Windows.Threading">
+      <HintPath>..\packages\System.Reactive.Windows.Threading.3.0.0\lib\net45\System.Reactive.Windows.Threading.dll</HintPath>
+    </Reference>
+    <Reference Include="WindowsBase" />
+    <Reference Include="FSharp.Control.Reactive">
+      <HintPath>..\packages\FSharp.Control.Reactive.3.5.0\lib\net45\FSharp.Control.Reactive.dll</HintPath>
+    </Reference>
+    <Reference Include="Foq">
+      <HintPath>..\packages\Foq2.0.0.1\lib\net45\Foq.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Divination\Divination.fsproj">
       <Project>{362807A9-90F5-4FCD-A3EB-E9A295F41F70}</Project>
       <Name>Divination</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="NoArgumentConstructorType.fs" />
+    <Compile Include="Observable.fs" />
+    <Compile Include="DivinableBuilderTest.fs" />
+    <None Include="packages.config" />
+    <Compile Include="Divinables\AlreadyBoundNoArgumentConstructor.fs" />
+    <Compile Include="Divinables\NoArgumentConstructor.fs" />
+    <Compile Include="Divinables\OneArgumentConstructor.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Divinables\" />
   </ItemGroup>
   <Import Project="$(FSharpTargetsPath)" />
 </Project>

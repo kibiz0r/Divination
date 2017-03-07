@@ -4,26 +4,29 @@ open System
 open System.Collections
 open System.Reflection
 
+// The concept of Identity is key to the entirety of Divination
 [<CustomEquality; CustomComparison>]
-type Identity<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> =
+type Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> =
     | Identifier of
         'Identifier
     | CallIdentity of
-        Identity<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> option
+        Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> option
         * 'MethodInfo
-        * Identity<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> list
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> list
     | ConstructorIdentity of
         'ConstructorInfo
-        * Identity<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> list
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> list
     | PropertyGetIdentity of
-        Identity<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> option
+        Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> option
         * 'PropertyInfo
-        * Identity<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> list
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> list
+    | ValueIdentity of
+        'Value * 'Type
 with
     override this.Equals other =
         match other with
-        | :? Identity<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> as o ->
-            (this :> IEquatable<Identity<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>>).Equals o
+        | :? Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> as o ->
+            (this :> IEquatable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>>).Equals o
         | _ -> false
 
     override this.GetHashCode () =
@@ -36,8 +39,10 @@ with
             (c :> obj, a).GetHashCode ()
         | PropertyGetIdentity (t, p, a) ->
             (t :> obj, p :> obj, a).GetHashCode ()
+        | ValueIdentity (v, t) ->
+            (v :> obj, t :> obj).GetHashCode ()
 
-    interface IEquatable<Identity<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>> with
+    interface IEquatable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>> with
         member this.Equals other =
             match this, other with
             | Identifier i, Identifier i2 ->
@@ -50,7 +55,7 @@ with
                 (t :> obj, p :> obj, a).Equals ((t2 :> obj, p2 :> obj, a2))
             | _ -> false
 
-    interface IComparable<Identity<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>> with
+    interface IComparable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>> with
         member this.CompareTo other =
             let comparisonObj identity =
                 match identity with
@@ -62,13 +67,17 @@ with
                     (t, a) :> obj
                 | PropertyGetIdentity (t, p, a) ->
                     (t, p, a) :> obj
+                | ValueIdentity (v, t) ->
+                    (v, t) :> obj
             Comparer.Default.Compare (comparisonObj this, comparisonObj other)
 
     interface IComparable with
         member this.CompareTo other =
-            (this :> IComparable<Identity<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>>).CompareTo (other :?> Identity<'Identifier, 'Value, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>)
+            (this :> IComparable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>>).CompareTo (other :?> Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>)
 
-type Identity<'Identifier, 'Value> = Identity<'Identifier, 'Value, ConstructorInfo, MethodInfo, PropertyInfo>
+type Identity<'Identifier, 'Value, 'Type> = Identity<'Identifier, 'Value, 'Type, ConstructorInfo, MethodInfo, PropertyInfo>
+
+type Identity<'Identifier, 'Value> = Identity<'Identifier, 'Value, Type>
 
 type Identity<'Identifier> = Identity<'Identifier, obj>
 

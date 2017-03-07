@@ -49,17 +49,22 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Identity.fs" />
-    <Compile Include="IDiviner.fs" />
-    <Compile Include="IDivinable.fs" />
+    <Compile Include="Identified.fs" />
+    <Compile Include="IIdentificationBinding.fs" />
+    <Compile Include="IIdentifiable.fs" />
     <Compile Include="Divined.fs" />
+    <Compile Include="IDiviner.fs" />
+    <Compile Include="IDivinationBinding.fs" />
+    <Compile Include="IDivinable.fs" />
     <Compile Include="Diviner.fs" />
-    <Compile Include="BindDivinable.fs" />
-    <Compile Include="ExprDivinable.fs" />
-    <Compile Include="UnwrapDivinable.fs" />
     <Compile Include="Divinable.fs" />
+    <Compile Include="IdentificationBinding.fs" />
     <Compile Include="DivinableBuilder.fs" />
     <Compile Include="TopLevelOperations.fs" />
     <None Include="packages.config" />
+    <Compile Include="DivineBuilder.fs" />
+    <Compile Include="DivinationBinding.fs" />
+    <Compile Include="Expr.fs" />
   </ItemGroup>
   <Import Project="$(FSharpTargetsPath)" />
 </Project>
