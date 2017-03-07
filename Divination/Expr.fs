@@ -12,4 +12,6 @@ module Expr =
             | NewObject (constructorInfo, arguments) ->
                 let arguments' = List.map (fun (argument : Expr) -> argument.ToIdentity ()) arguments
                 ConstructorIdentity (constructorInfo, arguments')
-            | _ -> invalidOp ""
+            | Value (value, type') ->
+                ValueIdentity (value, type')
+            | _ -> invalidOp (this.ToString ())

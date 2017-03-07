@@ -87,16 +87,20 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NoArgumentConstructorType.fs" />
     <Compile Include="Observable.fs" />
     <Compile Include="DivinableBuilderTest.fs" />
     <None Include="packages.config" />
-    <Compile Include="Divinables\AlreadyBoundNoArgumentConstructor.fs" />
-    <Compile Include="Divinables\NoArgumentConstructor.fs" />
-    <Compile Include="Divinables\OneArgumentConstructor.fs" />
+    <Compile Include="Divinable\NoArgumentConstructorType.fs" />
+    <Compile Include="Divinable\AlreadyBoundNoArgumentConstructor.fs" />
+    <Compile Include="Divinable\NoArgumentConstructor.fs" />
+    <Compile Include="Divinable\OneArgumentConstructorType.fs" />
+    <Compile Include="Divinable\OneArgumentConstructor.fs" />
+    <Compile Include="Divinable\CustomDiviner\DiviningAConstructor.fs" />
+    <Compile Include="Divinable\CustomDiviner\DiviningADivinable.fs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Divinables\" />
+    <Folder Include="Divinable\" />
+    <Folder Include="Divinable\CustomDiviner\" />
   </ItemGroup>
   <Import Project="$(FSharpTargetsPath)" />
 </Project>

@@ -14,11 +14,4 @@ type DivineBuilder (divinableBuilder : DivinableBuilder) =
         //|> Divinable.bind body
 
     member this.Return ([<ReflectedDefinition>] returnExpr : Expr<'T>) : IDivinable<'T> =
-        let rec exprToIdentity expr =
-            match expr with
-            | NewObject (constructorInfo, arguments) ->
-                let arguments' = List.map exprToIdentity arguments
-                ConstructorIdentity (constructorInfo, arguments')
-            | _ ->
-                invalidOp (returnExpr.ToString ())
-        Divinable<'T> (fun diviner -> exprToIdentity returnExpr) :> IDivinable<'T>
+        Divinable<'T> (fun (diviner, binding) -> diviner.Resolve (returnExpr.ToIdentity ())) :> IDivinable<'T>

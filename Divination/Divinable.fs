@@ -3,13 +3,7 @@
 open System
 open FSharp.Quotations
 
-type Divinable<'T> (identityFunc : IDiviner -> Identity) =
+type Divinable<'T> (body : IDiviner * IDivinationBinding -> Divined<'T>) =
     interface IDivinable<'T> with
         member this.Divine (diviner : IDiviner, binding : IDivinationBinding) : Divined<'T> =
-            let identity = identityFunc diviner
-            match binding.TryGet identity with
-            | Some entry -> 
-                entry
-            | None ->
-                let value = diviner.Resolve identity
-                DivinedValue (identity, value)
+            body (diviner, binding)
