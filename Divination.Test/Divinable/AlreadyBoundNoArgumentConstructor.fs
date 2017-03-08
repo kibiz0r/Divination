@@ -16,14 +16,14 @@ module ``Already-bound no-argument constructors`` =
         use __ = constructions.Connect ()
 
         let myBinding =
-            let binding = DivinationBinding.empty ()
+            let binding = DivinationBinding.empty Diviner.Current
             let constructorIdentity = <@ NoArgumentConstructorType () @>.ToIdentity ()
             binding.Set (constructorIdentity, DivinedValue (constructorIdentity, myAlreadyConstructed))
 
         let myDivined =
             (divinable {
                 return NoArgumentConstructorType ()
-            }).Divine (Diviner.Current, myBinding)
+            }).Divine myBinding
 
         constructions |> Observable.toConnectedList |> should equal []
         myDivined.Value |> should equal myAlreadyConstructed

@@ -14,4 +14,4 @@ type DivineBuilder (divinableBuilder : DivinableBuilder) =
         //|> Divinable.bind body
 
     member this.Return ([<ReflectedDefinition>] returnExpr : Expr<'T>) : IDivinable<'T> =
-        Divinable<'T> (fun (diviner, binding) -> diviner.Resolve (binding, returnExpr.ToIdentity ())) :> IDivinable<'T>
+        Divinable<'T> (fun binding -> returnExpr.ToIdentity ()) :> IDivinable<'T>

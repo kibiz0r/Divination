@@ -53,8 +53,8 @@
     <Compile Include="IIdentificationBinding.fs" />
     <Compile Include="IIdentifiable.fs" />
     <Compile Include="Divined.fs" />
-    <Compile Include="IDivinationBinding.fs" />
     <Compile Include="IDiviner.fs" />
+    <Compile Include="IDivinationBinding.fs" />
     <Compile Include="IDivinable.fs" />
     <Compile Include="Diviner.fs" />
     <Compile Include="Divinable.fs" />

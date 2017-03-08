@@ -95,8 +95,9 @@
     <Compile Include="Divinable\NoArgumentConstructor.fs" />
     <Compile Include="Divinable\OneArgumentConstructorType.fs" />
     <Compile Include="Divinable\OneArgumentConstructor.fs" />
-    <Compile Include="Divinable\CustomDiviner\DiviningAConstructor.fs" />
-    <Compile Include="Divinable\CustomDiviner\DiviningADivinable.fs" />
+    <Compile Include="Divinable\CustomDiviner\OverridingAConstructor.fs" />
+    <Compile Include="Divinable\CustomDiviner\OverridingAValueInADivinable.fs" />
+    <Compile Include="Divinable\CustomDiviner\OverridingAnArgumentInADivinable.fs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Divinable\" />

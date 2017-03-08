@@ -29,6 +29,10 @@ type Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'Proper
     | NewUnionCaseIdentity of
         'UnionCaseInfo
         * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
+    | VarIdentity of
+        string
+        * 'Value
+        * 'Type
 with
     override this.Equals other =
         match other with
@@ -52,6 +56,8 @@ with
             (a :> obj, t :> obj).GetHashCode ()
         | NewUnionCaseIdentity (u, a) ->
             (u :> obj, a).GetHashCode ()
+        | VarIdentity (n, v, t) ->
+            (n :> obj, v :> obj, t :> obj).GetHashCode ()
 
     interface IEquatable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>> with
         member this.Equals other =
@@ -68,26 +74,31 @@ with
                 (a :> obj, t :> obj).Equals ((a2 :> obj, t2 :> obj))
             | NewUnionCaseIdentity (u, a), NewUnionCaseIdentity (u2, a2) ->
                 (u :> obj, a).Equals ((u2 :> obj, a2))
+            | VarIdentity (n, v, t), VarIdentity (n2, v2, t2) ->
+                (n :> obj, v :> obj, t :> obj).Equals ((n2 :> obj, v2 :> obj, t2 :> obj))
             | _ -> false
 
     interface IComparable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>> with
         member this.CompareTo other =
             let comparisonObj identity =
-                match identity with
-                | Identifier i ->
-                    i :> obj
-                | CallIdentity (t, m, a) ->
-                    (t, m, a) :> obj
-                | ConstructorIdentity (t, a) ->
-                    (t, a) :> obj
-                | PropertyGetIdentity (t, p, a) ->
-                    (t, p, a) :> obj
-                | ValueIdentity (v, t) ->
-                    (v, t) :> obj
-                | CoerceIdentity (a, t) ->
-                    (a, t) :> obj
-                | NewUnionCaseIdentity (u, a) ->
-                    (u, a) :> obj
+                identity.GetHashCode ()
+                //match identity with
+                //| Identifier i ->
+                //    i :> obj
+                //| CallIdentity (t, m, a) ->
+                //    (t, m, a) :> obj
+                //| ConstructorIdentity (t, a) ->
+                //    (t, a) :> obj
+                //| PropertyGetIdentity (t, p, a) ->
+                //    (t, p, a) :> obj
+                //| ValueIdentity (v, t) ->
+                //    (v, t) :> obj
+                //| CoerceIdentity (a, t) ->
+                //    (a, t) :> obj
+                //| NewUnionCaseIdentity (u, a) ->
+                //    (u, a) :> obj
+                //| ArgumentIdentity (n) ->
+                //    n :> obj
             Comparer.Default.Compare (comparisonObj this, comparisonObj other)
 
     interface IComparable with
