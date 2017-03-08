@@ -2,11 +2,12 @@
 
 open System
 open System.Reflection
+open FSharp.Reflection
 
 // A Divined is a handle to a value that was materialized by giving an Identity to a Diviner.
-type Divined<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> =
-    | DivinedValue of Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> * 'T
-    | DivinedException of Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> * exn
+type Divined<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+    | DivinedValue of Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> * 'T
+    | DivinedException of Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> * exn
 with
     member this.Identity =
         match this with
@@ -23,7 +24,7 @@ with
         | DivinedValue (_, _) -> null
         | DivinedException (_, e) -> e
 
-type Divined<'T, 'Identifier, 'Value, 'Type> = Divined<'T, 'Identifier, 'Value, 'Type, ConstructorInfo, MethodInfo, PropertyInfo>
+type Divined<'T, 'Identifier, 'Value, 'Type> = Divined<'T, 'Identifier, 'Value, 'Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo>
 
 type Divined<'T, 'Identifier, 'Value> = Divined<'T, 'Identifier, 'Value, Type>
 
@@ -33,7 +34,7 @@ type Divined<'T> = Divined<'T, obj>
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Divined =
-    let cast (divined : Divined<'T, _, _, _, _, _, _>) : Divined<'U, _, _, _, _, _, _> =
+    let cast (divined : Divined<'T, _, _, _, _, _, _, _>) : Divined<'U, _, _, _, _, _, _, _> =
         match divined with
         | DivinedValue (identity, value) ->
             DivinedValue (identity, (value :> obj) :?> 'U)

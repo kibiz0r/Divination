@@ -14,4 +14,16 @@ module Expr =
                 ConstructorIdentity (constructorInfo, arguments')
             | Value (value, type') ->
                 ValueIdentity (value, type')
+            | Call (this', methodInfo, arguments) ->
+                let this'' =
+                    match this' with
+                    | Some t -> Some (t.ToIdentity ())
+                    | None -> None
+                let arguments' = List.map (fun (argument : Expr) -> argument.ToIdentity ()) arguments
+                CallIdentity (this'', methodInfo, arguments')
+            | Coerce (argument, type') ->
+                CoerceIdentity (argument.ToIdentity (), type')
+            | NewUnionCase (unionCaseInfo, arguments) ->
+                let arguments' = List.map (fun (argument : Expr) -> argument.ToIdentity ()) arguments
+                NewUnionCaseIdentity (unionCaseInfo, arguments')
             | _ -> invalidOp (this.ToString ())

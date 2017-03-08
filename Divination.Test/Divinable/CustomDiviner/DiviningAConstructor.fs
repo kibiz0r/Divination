@@ -12,7 +12,7 @@ module ``Custom-divining a constructor`` =
         let customOverride : obj = "this is actually an object" :> obj
         let myDiviner = {
             new Diviner () with
-                override this.Constructor<'T> (constructorInfo, arguments) =
+                override this.Constructor<'T> (binding, constructorInfo, arguments) =
                     customOverride :?> 'T
             }
         let myDivined =

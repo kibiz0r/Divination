@@ -3,30 +3,37 @@
 open System
 open System.Collections
 open System.Reflection
+open FSharp.Reflection
 
 // The concept of Identity is key to the entirety of Divination
 [<CustomEquality; CustomComparison>]
-type Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> =
+type Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
     | Identifier of
         'Identifier
     | CallIdentity of
-        Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> option
+        Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> option
         * 'MethodInfo
-        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> list
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
     | ConstructorIdentity of
         'ConstructorInfo
-        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> list
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
     | PropertyGetIdentity of
-        Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> option
+        Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> option
         * 'PropertyInfo
-        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> list
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
     | ValueIdentity of
         'Value * 'Type
+    | CoerceIdentity of
+        Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * 'Type
+    | NewUnionCaseIdentity of
+        'UnionCaseInfo
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
 with
     override this.Equals other =
         match other with
-        | :? Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> as o ->
-            (this :> IEquatable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>>).Equals o
+        | :? Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> as o ->
+            (this :> IEquatable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>>).Equals o
         | _ -> false
 
     override this.GetHashCode () =
@@ -41,8 +48,12 @@ with
             (t :> obj, p :> obj, a).GetHashCode ()
         | ValueIdentity (v, t) ->
             (v :> obj, t :> obj).GetHashCode ()
+        | CoerceIdentity (a, t) ->
+            (a :> obj, t :> obj).GetHashCode ()
+        | NewUnionCaseIdentity (u, a) ->
+            (u :> obj, a).GetHashCode ()
 
-    interface IEquatable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>> with
+    interface IEquatable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>> with
         member this.Equals other =
             match this, other with
             | Identifier i, Identifier i2 ->
@@ -53,9 +64,13 @@ with
                 (c :> obj, a).Equals ((c2 :> obj, a2))
             | PropertyGetIdentity (t, p, a), PropertyGetIdentity (t2, p2, a2) ->
                 (t :> obj, p :> obj, a).Equals ((t2 :> obj, p2 :> obj, a2))
+            | CoerceIdentity (a, t), CoerceIdentity (a2, t2) ->
+                (a :> obj, t :> obj).Equals ((a2 :> obj, t2 :> obj))
+            | NewUnionCaseIdentity (u, a), NewUnionCaseIdentity (u2, a2) ->
+                (u :> obj, a).Equals ((u2 :> obj, a2))
             | _ -> false
 
-    interface IComparable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>> with
+    interface IComparable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>> with
         member this.CompareTo other =
             let comparisonObj identity =
                 match identity with
@@ -69,13 +84,17 @@ with
                     (t, p, a) :> obj
                 | ValueIdentity (v, t) ->
                     (v, t) :> obj
+                | CoerceIdentity (a, t) ->
+                    (a, t) :> obj
+                | NewUnionCaseIdentity (u, a) ->
+                    (u, a) :> obj
             Comparer.Default.Compare (comparisonObj this, comparisonObj other)
 
     interface IComparable with
         member this.CompareTo other =
-            (this :> IComparable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>>).CompareTo (other :?> Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo>)
+            (this :> IComparable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>>).CompareTo (other :?> Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
 
-type Identity<'Identifier, 'Value, 'Type> = Identity<'Identifier, 'Value, 'Type, ConstructorInfo, MethodInfo, PropertyInfo>
+type Identity<'Identifier, 'Value, 'Type> = Identity<'Identifier, 'Value, 'Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo>
 
 type Identity<'Identifier, 'Value> = Identity<'Identifier, 'Value, Type>
 

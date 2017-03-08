@@ -2,11 +2,12 @@
 
 open System
 open System.Reflection
+open FSharp.Reflection
 
 // An Identified is a handle to a value that has had its Identity tracked.
-type Identified<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> =
-    | IdentifiedValue of Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> * 'T
-    | IdentifiedException of Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo> * exn
+type Identified<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+    | IdentifiedValue of Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> * 'T
+    | IdentifiedException of Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> * exn
 with
     member this.Identity =
         match this with
@@ -23,7 +24,7 @@ with
         | IdentifiedValue (_, _) -> null
         | IdentifiedException (_, e) -> e
 
-type Identified<'T, 'Identifier, 'Value, 'Type> = Identified<'T, 'Identifier, 'Value, 'Type, ConstructorInfo, MethodInfo, PropertyInfo>
+type Identified<'T, 'Identifier, 'Value, 'Type> = Identified<'T, 'Identifier, 'Value, 'Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo>
 
 type Identified<'T, 'Identifier, 'Value> = Identified<'T, 'Identifier, 'Value, Type>
 
