@@ -1,16 +1,29 @@
 ﻿namespace Divination
 
 open System
-open FSharp.Quotations
+open System.Reflection
+open FSharp.Reflection
 
-type Divinable<'T> (identify : IDivinationBinding -> Identity) =
-    interface IDivinable<'T> with
-        member this.Identify (binding : IDivinationBinding) : Identity =
-            identify binding
+type Divinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> (identify : IDiviner<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> * IdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> -> Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) =
+    interface IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> with
+        member this.Identify (diviner : IDiviner<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, scope : IdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+            identify (diviner, scope)
+
+type Divinable<'T, 'Identifier, 'Value, 'Type> = Divinable<'T, 'Identifier, 'Value, 'Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo>
+
+type Divinable<'T, 'Identifier, 'Value> = Divinable<'T, 'Identifier, 'Value, Type>
+
+type Divinable<'T, 'Identifier> = Divinable<'T, 'Identifier, obj>
+
+type Divinable<'T> = Divinable<'T, obj>
+
+module Divinable =
+    let mergeScope (overridingScope : IdentificationScope<_, _, _, _, _, _, _>) (divinable : IDivinable<'T, _, _, _, _, _, _, _>) : IDivinable<'T, _, _, _, _, _, _, _> =
+        Divinable<'T, _, _, _, _, _, _, _> (fun (diviner, originalScope) -> divinable.Identify (diviner, IdentificationScope.merge overridingScope originalScope)) :> _
 
 [<AutoOpen>]
-module Divinable =
+module DivinableExtensions =
     type IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> with
-        member this.Divine (binding : IDivinationBinding<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : Divined<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
-            let identity = this.Identify binding
-            binding.Diviner.Resolve<'T> (binding, identity)
+        member this.Divine (diviner : IDiviner<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, scope : IdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : Divined<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+            let identity = this.Identify (diviner, scope)
+            diviner.Resolve<'T> (identity, scope)

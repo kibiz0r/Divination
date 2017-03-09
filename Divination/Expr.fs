@@ -12,8 +12,8 @@ module Expr =
             | NewObject (constructorInfo, arguments) ->
                 let arguments' = List.map (fun (argument : Expr) -> argument.ToIdentity ()) arguments
                 ConstructorIdentity (constructorInfo, arguments')
-            | ValueWithName (value, type', name) ->
-                VarIdentity (name, value, type')
+            | ValueWithName (_, type', name) ->
+                VarIdentity (name, type')
             | Value (value, type') ->
                 ValueIdentity (value, type')
             | Call (this', methodInfo, arguments) ->

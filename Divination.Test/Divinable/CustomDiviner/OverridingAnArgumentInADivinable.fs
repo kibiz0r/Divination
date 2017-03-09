@@ -18,17 +18,18 @@ module ``Custom-divining a divinable's argument`` =
         let customReturnValue = 7
         let myDiviner = {
             new Diviner () with
-                override this.Var<'T> (name, value, type') =
+                override this.Var<'T> (name, type') =
                     match name with
                     | "anArgument" ->
                         (5 :> obj) :?> 'T
                     | _ ->
-                        base.Var<'T> (name, value, type')
+                        base.Var<'T> (name, type')
             }
         let myDivined =
             (divinable {
                 let myArgument = 1
                 let! returnValue = MyModule.aFuncThatAcceptsAnArgumentAndReturnsDivinable myArgument
+                let someValue = "foo"
                 return returnValue
-            }).Divine (DivinationBinding.empty myDiviner)
+            }).Divine (myDiviner, IdentificationScope.empty ())
         myDivined.Value |> should equal customReturnValue

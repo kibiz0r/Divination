@@ -31,5 +31,5 @@ module ``Custom-divining a divinable's return value`` =
             (divinable {
                 let! returnValue = MyModule.aFuncThatReturnsDivinable ()
                 return returnValue
-            }).Divine (DivinationBinding.empty myDiviner)
+            }).Divine (myDiviner, IdentificationScope.empty ())
         myDivined.Value |> should equal customString

@@ -35,7 +35,7 @@ type IDiviner<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'Proper
         * Divined<obj, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
         -> 'T
 
-    abstract member Var<'T> : string * 'Value * 'Type -> 'T
+    abstract member Var<'T> : string * 'Type -> 'T
 
 type IDiviner<'Identifier, 'Value, 'Type> = IDiviner<'Identifier, 'Value, 'Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo>
 

@@ -16,7 +16,7 @@ module ``No-argument constructors`` =
         let myDivined =
             (divinable {
                 return NoArgumentConstructorType ()
-            }).Divine (DivinationBinding.empty Diviner.Current)
+            }).Divine (Diviner.Current, IdentificationScope.empty ())
 
         myDivined.Value |> should be instanceOfType<NoArgumentConstructorType>
         constructions |> Observable.toConnectedList |> should equal [()]

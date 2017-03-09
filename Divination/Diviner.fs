@@ -7,48 +7,48 @@ open FSharp.Reflection
 [<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Diviner =
     type IDiviner<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> with
-        member this.Resolve<'T> (binding : IDivinationBinding<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, identity : Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : Divined<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
-            match binding.TryGet<'T> identity with
-            | Some entry ->
-                entry
+        member this.Resolve<'T> (identity : Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, scope : IdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : Divined<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+            let resolveValue (identity : Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) (scope : IdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : 'T =
+                match identity with
+                | Identifier identifier ->
+                    this.Identifier (identifier)
+                | CallIdentity (this', methodInfo, arguments) ->
+                    let this'' =
+                        match this' with
+                        | Some t -> Some (this.Resolve<obj> (t, scope))
+                        | None -> None
+                    let arguments' = List.map (fun argument -> this.Resolve<obj> (argument, scope)) arguments
+                    this.Call<'T> (this'', methodInfo, arguments')
+                | ConstructorIdentity (constructorInfo, arguments) ->
+                    let arguments' = List.map (fun argument -> this.Resolve<obj> (argument, scope)) arguments
+                    this.Constructor<'T> (constructorInfo, arguments')
+                | PropertyGetIdentity (this', propertyInfo, arguments) ->
+                    let this'' =
+                        match this' with
+                        | Some t -> Some (this.Resolve<obj> (t, scope))
+                        | None -> None
+                    let arguments' = List.map (fun argument -> this.Resolve<obj> (argument, scope)) arguments
+                    this.PropertyGet<'T> (this'', propertyInfo, arguments')
+                | ValueIdentity (value, type') ->
+                    this.Value<'T> (value, type')
+                | CoerceIdentity (argument, type') ->
+                    let argument' = this.Resolve<obj> (argument, scope)
+                    this.Coerce<'T> (argument', type')
+                | NewUnionCaseIdentity (unionCaseInfo, arguments) ->
+                    let arguments' = List.map (fun argument -> this.Resolve<obj> (argument, scope)) arguments
+                    this.NewUnionCase<'T> (unionCaseInfo, arguments')
+                | VarIdentity (name, type') ->
+                    this.Var<'T> (name, type')
+            match IdentificationScope.tryFind identity scope with
+            | Some bound ->
+                let value = resolveValue bound scope
+                DivinedValue (bound, value)
             | None ->
-                let value =
-                    match identity with
-                    | Identifier identifier ->
-                        this.Identifier (identifier)
-                    | CallIdentity (this', methodInfo, arguments) ->
-                        let this'' =
-                            match this' with
-                            | Some t ->
-                                let divined = this.Resolve<obj> (binding, t)
-                                Some divined
-                            | None -> None
-                        let arguments' = List.map (fun argument -> this.Resolve<obj> (binding, argument)) arguments
-                        this.Call<'T> (this'', methodInfo, arguments')
-                    | ConstructorIdentity (constructorInfo, arguments) ->
-                        let arguments' = List.map (fun argument -> this.Resolve<obj> (binding, argument)) arguments
-                        this.Constructor (constructorInfo, arguments')
-                    | PropertyGetIdentity (this', propertyInfo, arguments) ->
-                        let this'' =
-                            match this' with
-                            | Some t -> Some (DivinedValue (t, obj ()))
-                            | None -> None
-                        let arguments' = List.map (fun argument -> this.Resolve<obj> (binding, argument)) arguments
-                        this.PropertyGet (this'', propertyInfo, arguments')
-                    | ValueIdentity (value, type') ->
-                        this.Value (value, type')
-                    | CoerceIdentity (argument, type') ->
-                        let argument' = this.Resolve<obj> (binding, argument)
-                        this.Coerce (argument', type')
-                    | NewUnionCaseIdentity (unionCaseInfo, arguments) ->
-                        let arguments' = List.map (fun argument -> this.Resolve<obj> (binding, argument)) arguments
-                        this.NewUnionCase (unionCaseInfo, arguments')
-                    | VarIdentity (name, value, type') ->
-                        this.Var (name, value, type')
+                let value = resolveValue identity scope
                 DivinedValue (identity, value)
 
-        member this.ResolveValue<'T> (binding : IDivinationBinding<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, identity : Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : 'T =
-            (this.Resolve<'T> (binding, identity)).Value
+        member this.ResolveValue<'T> (identity : Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, scope : IdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : 'T =
+            (this.Resolve<'T> (identity, scope)).Value
 
 type Diviner () =
     static let mutable current : IDiviner option = None
@@ -102,9 +102,9 @@ type Diviner () =
         let arguments' = List.map (fun (argument : Divined<obj>) -> argument.Value) arguments |> List.toArray
         FSharpValue.MakeUnion (unionCaseInfo, arguments') :?> 'T
 
-    abstract member Var<'T> : string * obj * Type -> 'T
-    default this.Var<'T> (name, value, type') =
-        value :?> 'T
+    abstract member Var<'T> : string * Type -> 'T
+    default this.Var<'T> (name, type') : 'T =
+        invalidOp (sprintf "Unbound Var %s : %A" name type')
 
     interface IDiviner with
         member this.Identifier<'T> (identifier) =
@@ -128,5 +128,5 @@ type Diviner () =
         member this.NewUnionCase<'T> (unionCaseInfo, arguments) =
             this.NewUnionCase<'T> (unionCaseInfo, arguments)
 
-        member this.Var<'T> (name, value, type') =
-            this.Var<'T> (name, value, type')
+        member this.Var<'T> (name, type') =
+            this.Var<'T> (name, type')

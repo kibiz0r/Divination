@@ -16,7 +16,7 @@ module ``One-argument constructors`` =
         let myDivined =
             (divinable {
                 return OneArgumentConstructorType "hello"
-            }).Divine (DivinationBinding.empty Diviner.Current)
+            }).Divine (Diviner.Current, IdentificationScope.empty ())
 
         myDivined.Value |> should be instanceOfType<OneArgumentConstructorType>
         myDivined.Value.Str |> should equal "hello"
