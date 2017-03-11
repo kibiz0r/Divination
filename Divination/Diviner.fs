@@ -60,8 +60,8 @@ type Diviner () =
     default this.Call<'T> (scope, this', methodInfo, arguments) =
         let this'' =
             match this' with
-            | Some t -> Some (this.ResolveValue<obj> (scope, t))
-            | None -> None
+            | Some t -> this.ResolveValue<obj> (scope, t)
+            | None -> null
         let arguments' = List.map (fun (argument : Identity) -> this.ResolveValue<obj> (scope, argument)) arguments |> List.toArray
         methodInfo.Invoke (this'', arguments') :?> 'T
 
@@ -74,8 +74,8 @@ type Diviner () =
     default this.PropertyGet<'T> (scope, this', propertyInfo, arguments) =
         let this'' =
             match this' with
-            | Some t -> Some (this.ResolveValue<obj> (scope, t))
-            | None -> None
+            | Some t -> this.ResolveValue<obj> (scope, t)
+            | None -> null
         let arguments' = List.map (fun (argument : Identity) -> this.ResolveValue<obj> (scope, argument)) arguments |> List.toArray
         propertyInfo.GetValue (this'', arguments') :?> 'T
 

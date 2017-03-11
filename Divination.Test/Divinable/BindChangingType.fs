@@ -10,11 +10,12 @@ open Divination
 module ``Binds changing type`` =
     [<Test>]
     let ``works`` () =
-        let intToString = typeof<int>.GetMethod ("ToString", [||])
+        let objToString = <@ (obj ()).ToString () @>.ToMethodInfo ()
         let myDivined : Divined<string> =
             (divinable {
                 let! x = Divinable.value 5 : IDivinable<int>
                 return x.ToString ()
             }).Divine (IdentificationScope.empty (), Diviner.Current)
-        myDivined.Identity |> should equal (CallIdentity (Some (ValueIdentity (5 :> obj, typeof<int>)), intToString, []) : Identity)
-        myDivined.Value |> should equal 5
+        let expected = (CallIdentity (Some (ValueIdentity (5 :> obj, typeof<int>)), objToString, []) : Identity)
+        myDivined.Identity |> should equal expected
+        myDivined.Value |> should equal "5"

@@ -51,6 +51,15 @@ type DivinableBuilder () as this =
             targetMethodInfo.Invoke (this, [|argumentExpr; bodyExpr|])
         | _ -> invalidOp ""
 
+    member this.IdentifyBindArgumentExpr (scope : IdentificationScope, diviner : IDiviner, argumentExpr : Expr, argumentType : Type) : Identity =
+        let argumentDivinable = this.DivinableExprToScopedDivinableWrapper (argumentExpr, argumentType)
+        let argumentDivinableType = argumentExpr.Type
+        //let argumentDivinableInterfaceType = argumentDivinableType.GetInterfaces () |> Array.find (fun i -> i.Name.StartsWith "IDivinable")
+        let argumentIdentifyMethod = argumentDivinableType.GetMethod ("Identify")
+        let argumentIdentifyReturnValue = argumentIdentifyMethod.Invoke (argumentDivinable, [|scope; diviner|])
+        let argumentIdentity = argumentIdentifyReturnValue :?> Identity
+        argumentIdentity
+
     member this.DivinableExprToScopedDivinableWrapper (divinableExpr : Expr, divinableType : Type) =
         match <@ this.DivinableExprToScopedDivinable<obj> (obj () :?> _) @> with
         | Call (_, objMethodInfo, _) ->
@@ -85,7 +94,8 @@ type DivinableBuilder () as this =
                     | None -> null
                 let arguments'' = List.map (fun a -> diviner.ResolveValue (scope, a)) arguments' |> List.toArray
 
-                let divinable : IDivinable<'T> = methodInfo.Invoke (this''', arguments'') :?> _
+                let r = methodInfo.Invoke (this''', arguments'')
+                let divinable : IDivinable<'T> = r :?> _
 
                 divinable.Identify (scopeWithThis, diviner)
             ) :> _
@@ -97,72 +107,131 @@ type DivinableBuilder () as this =
 
     member this.Run ([<ReflectedDefinition>] runExpr : Expr<IDivinable<'T>>) : IDivinable<'T> =
         let runExprString = runExpr.ToString ()
-        match runExpr with
-        | Call (Some (Value (this', _)), methodInfo, argumentExprs) ->
-            if methodInfo.IsGenericMethod then
-                let methodDefinition = methodInfo.GetGenericMethodDefinition ()
-                if methodDefinition = returnMethodDefinition then
-                    match argumentExprs with
-                    | [returnArgumentExpr] ->
-                        let returnArgumentExprString = returnArgumentExpr.ToString ()
-                        let returnArgumentIdentity = returnArgumentExpr.ToIdentity ()
-                        Divinable<_> (fun _ -> returnArgumentIdentity) :> _
-                    | _ -> invalidOp ""
-                else if methodDefinition = bindMethodDefinition then
-                    match argumentExprs with
-                    | [bindArgumentExpr; bindBodyExpr] ->
-                        let bindArgumentExprString = bindArgumentExpr.ToString ()
+        let rec walkExpr (expr : Expr) : IdentificationScope -> IDiviner -> Identity =
+            match expr with
+            | Call (this', methodInfo, argumentExprs) ->
+                let handleCallNormally =
+                    fun scope diviner ->
+                        let thisIdentity =
+                            match this' with
+                            | Some t -> Some (walkExpr t scope diviner)
+                            | None -> None
+                        let argumentIdentities = List.map (fun a -> walkExpr a scope diviner) argumentExprs
+                        CallIdentity (thisIdentity, methodInfo, argumentIdentities)
+                if this' = Some (Expr.Value this) && methodInfo.IsGenericMethod then
+                    let methodDefinition = methodInfo.GetGenericMethodDefinition ()
+                    if methodDefinition = returnMethodDefinition then
+                        match argumentExprs with
+                        | [returnArgumentExpr] ->
+                            walkExpr returnArgumentExpr
+                        | _ -> invalidOp "Wrong Return method arguments"
+                    else if methodDefinition = bindMethodDefinition then
                         match methodInfo.GetGenericArguments () with
                         | [|bindArgumentType; bindReturnType|] ->
-                            this.BindExprWrapper (bindArgumentExpr, bindBodyExpr, bindArgumentType, bindReturnType) :?> _
-                            //let bindArgument = this.DivinableExprToScopedDivinableWrapper (bindArgumentExpr, bindArgumentType)
-                            //bindArgument :?> _
-                            //let bindBodyExprString = bindBodyExpr.ToString ()
-                            //let bindArgument = QuotationEvaluator.EvaluateUntyped bindArgumentExpr
-                            //let bindBody = QuotationEvaluator.EvaluateUntyped bindBodyExpr
-                            //methodInfo.Invoke (this, [|bindArgumentExpr; bindBodyExpr|]) :?> IDivinable<'T>
-                            //let bindArgumentIdentity = bindArgumentExpr.ToIdentity ()
-                            //Divinable<_> (fun _ -> bindArgumentIdentity) :> _
-                        | _ -> invalidOp ""
-                    | _ -> invalidOp ""
-                else
-                    invalidOp ""
-            else
-                invalidOp (sprintf "Wrong methodInfo: %A" methodInfo)
-        | Let (var, argumentExpr, bodyExpr) ->
-            let bodyIdentity =
-                match bodyExpr with
-                | Call (Some (Value (this, _)), methodInfo, argumentExprs) ->
-                    if methodInfo.IsGenericMethod then
-                        let methodDefinition = methodInfo.GetGenericMethodDefinition ()
-                        if methodDefinition = returnMethodDefinition then
-                            match argumentExprs with
-                            | [returnArgumentExpr] ->
-                                //let returnArgumentExprString = returnArgumentExpr.ToString ()
-                                let returnArgumentIdentity = returnArgumentExpr.ToIdentity ()
-                                returnArgumentIdentity
-                                //Divinable<_> (fun _ -> returnArgumentIdentity) :> _
-                            | _ -> invalidOp ""
-                        else if methodDefinition = bindMethodDefinition then
                             match argumentExprs with
                             | [bindArgumentExpr; bindBodyExpr] ->
-                                //let bindArgumentExprString = bindArgumentExpr.ToString ()
-                                //let bindBodyExprString = bindBodyExpr.ToString ()
-                                let bindArgumentIdentity = bindArgumentExpr.ToIdentity ()
-                                bindArgumentIdentity
-                                //Divinable<_> (fun _ -> bindArgumentIdentity) :> _
-                            | _ -> invalidOp ""
-                        else
-                            invalidOp ""
+                                let bindArgumentExprString = bindArgumentExpr.ToString ()
+                                match bindBodyExpr with
+                                | Lambda (_, Let (letVar, _, letBody)) ->
+                                    fun scope diviner ->
+                                        let bindArgumentIdentity = this.IdentifyBindArgumentExpr (scope, diviner, bindArgumentExpr, bindArgumentType)
+                                        let scope = IdentificationScope.add (VarIdentity (letVar.Name, letVar.Type)) bindArgumentIdentity scope
+                                        walkExpr letBody scope diviner
+                                | _ -> invalidOp "Wrong Bind method body Expr shape"
+                            | _ -> invalidOp "Wrong Bind method arguments"
+                        | _ -> invalidOp "Wrong Bind method type arguments"
                     else
-                        invalidOp (sprintf "Wrong methodInfo: %A" methodInfo)
-                | _ -> invalidOp ""
-            let bodyExprString = bodyExpr.ToString ()
-            let identity = LetIdentity (VarIdentity (var.Name, var.Type), argumentExpr.ToIdentity (), bodyIdentity)
-            let identityString = identity.ToString ()
-            let x = 5
-            Divinable<_> (fun _ -> identity) :> _
-        | _ -> invalidOp ""
+                        handleCallNormally
+                else
+                    handleCallNormally
+            | Var (var) ->
+                fun scope diviner ->
+                    let varIdentity = VarIdentity (var.Name, var.Type)
+                    match IdentificationScope.tryFind varIdentity scope with
+                    | Some bound -> bound
+                    | None -> invalidOp (sprintf "Couldn't find var: %A" varIdentity)
+            | Let (letVar, letArgument, letBody) ->
+                fun scope diviner ->
+                    let letArgumentIdentity = walkExpr letArgument scope diviner
+                    let scope = IdentificationScope.add (VarIdentity (letVar.Name, letVar.Type)) letArgumentIdentity scope
+                    walkExpr letBody scope diviner
+            | Value (value, type') ->
+                fun scope diviner ->
+                    ValueIdentity (value, type')
+            | NewObject (constructorInfo, argumentExprs) ->
+                fun scope diviner ->
+                    let argumentIdentities = List.map (fun a -> walkExpr a scope diviner) argumentExprs
+                    ConstructorIdentity (constructorInfo, argumentIdentities)
+            | _ -> invalidOp (sprintf "Expr type not handled yet: %A" expr)
+        Divinable<_> (fun (scope, diviner) ->
+            walkExpr runExpr scope diviner
+        ) :> _
+        //match runExpr with
+        //| Call (Some (Value (this', _)), methodInfo, argumentExprs) ->
+        //    if methodInfo.IsGenericMethod then
+        //        let methodDefinition = methodInfo.GetGenericMethodDefinition ()
+        //        if methodDefinition = returnMethodDefinition then
+        //            match argumentExprs with
+        //            | [returnArgumentExpr] ->
+        //                let returnArgumentExprString = returnArgumentExpr.ToString ()
+        //                let returnArgumentIdentity = returnArgumentExpr.ToIdentity ()
+        //                Divinable<_> (fun _ -> returnArgumentIdentity) :> _
+        //            | _ -> invalidOp ""
+        //        else if methodDefinition = bindMethodDefinition then
+        //            match argumentExprs with
+        //            | [bindArgumentExpr; bindBodyExpr] ->
+        //                let bindArgumentExprString = bindArgumentExpr.ToString ()
+        //                match methodInfo.GetGenericArguments () with
+        //                | [|bindArgumentType; bindReturnType|] ->
+        //                    this.BindExprWrapper (bindArgumentExpr, bindBodyExpr, bindArgumentType, bindReturnType) :?> _
+        //                    //let bindArgument = this.DivinableExprToScopedDivinableWrapper (bindArgumentExpr, bindArgumentType)
+        //                    //bindArgument :?> _
+        //                    //let bindBodyExprString = bindBodyExpr.ToString ()
+        //                    //let bindArgument = QuotationEvaluator.EvaluateUntyped bindArgumentExpr
+        //                    //let bindBody = QuotationEvaluator.EvaluateUntyped bindBodyExpr
+        //                    //methodInfo.Invoke (this, [|bindArgumentExpr; bindBodyExpr|]) :?> IDivinable<'T>
+        //                    //let bindArgumentIdentity = bindArgumentExpr.ToIdentity ()
+        //                    //Divinable<_> (fun _ -> bindArgumentIdentity) :> _
+        //                | _ -> invalidOp ""
+        //            | _ -> invalidOp ""
+        //        else
+        //            invalidOp ""
+        //    else
+        //        invalidOp (sprintf "Wrong methodInfo: %A" methodInfo)
+        //| Let (var, argumentExpr, bodyExpr) ->
+        //    let bodyIdentity =
+        //        match bodyExpr with
+        //        | Call (Some (Value (this, _)), methodInfo, argumentExprs) ->
+        //            if methodInfo.IsGenericMethod then
+        //                let methodDefinition = methodInfo.GetGenericMethodDefinition ()
+        //                if methodDefinition = returnMethodDefinition then
+        //                    match argumentExprs with
+        //                    | [returnArgumentExpr] ->
+        //                        //let returnArgumentExprString = returnArgumentExpr.ToString ()
+        //                        let returnArgumentIdentity = returnArgumentExpr.ToIdentity ()
+        //                        returnArgumentIdentity
+        //                        //Divinable<_> (fun _ -> returnArgumentIdentity) :> _
+        //                    | _ -> invalidOp ""
+        //                else if methodDefinition = bindMethodDefinition then
+        //                    match argumentExprs with
+        //                    | [bindArgumentExpr; bindBodyExpr] ->
+        //                        //let bindArgumentExprString = bindArgumentExpr.ToString ()
+        //                        //let bindBodyExprString = bindBodyExpr.ToString ()
+        //                        let bindArgumentIdentity = bindArgumentExpr.ToIdentity ()
+        //                        bindArgumentIdentity
+        //                        //Divinable<_> (fun _ -> bindArgumentIdentity) :> _
+        //                    | _ -> invalidOp ""
+        //                else
+        //                    invalidOp ""
+        //            else
+        //                invalidOp (sprintf "Wrong methodInfo: %A" methodInfo)
+        //        | _ -> invalidOp ""
+        //    let bodyExprString = bodyExpr.ToString ()
+        //    let identity = LetIdentity (VarIdentity (var.Name, var.Type), argumentExpr.ToIdentity (), bodyIdentity)
+        //    let identityString = identity.ToString ()
+        //    let x = 5
+        //    Divinable<_> (fun _ -> identity) :> _
+        //| _ -> invalidOp ""
 
     member this.ScopeFromExpr (expr : Expr) : IdentificationScope =
         let exprString = expr.ToString ()
