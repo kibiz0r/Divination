@@ -24,7 +24,7 @@ module ``Already-bound no-argument constructors`` =
         let myDivined =
             (divinable {
                 return NoArgumentConstructorType ()
-            }).Divine (Diviner.Current, myScope)
+            }).Divine (myScope, Diviner.Current)
 
         constructions |> Observable.toConnectedList |> should equal []
         myDivined.Value |> should equal myAlreadyConstructed

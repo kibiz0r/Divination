@@ -18,7 +18,7 @@ module ``Custom-divining a divinable's return value`` =
         let customString = "overriden return value"
         let myDiviner = {
             new Diviner () with
-                override this.Value<'T> (value, _) =
+                override this.Value<'T> (scope, value, _) =
                     match value with
                     | :? string as str ->
                         if str = "to override" then
@@ -31,5 +31,5 @@ module ``Custom-divining a divinable's return value`` =
             (divinable {
                 let! returnValue = MyModule.aFuncThatReturnsDivinable ()
                 return returnValue
-            }).Divine (myDiviner, IdentificationScope.empty ())
+            }).Divine (IdentificationScope.empty (), myDiviner)
         myDivined.Value |> should equal customString

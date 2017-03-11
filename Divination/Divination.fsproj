@@ -51,11 +51,9 @@
     <Compile Include="Identity.fs" />
     <Compile Include="Identified.fs" />
     <Compile Include="IdentificationScope.fs" />
-    <Compile Include="IIdentificationBinding.fs" />
     <Compile Include="IIdentifiable.fs" />
     <Compile Include="Divined.fs" />
     <Compile Include="IDiviner.fs" />
-    <Compile Include="DivinationBinding.fs" />
     <Compile Include="IDivinable.fs" />
     <Compile Include="Diviner.fs" />
     <Compile Include="Divinable.fs" />
@@ -64,6 +62,7 @@
     <Compile Include="TopLevelOperations.fs" />
     <None Include="packages.config" />
     <Compile Include="DivineBuilder.fs" />
+    <Compile Include="ExprIdentifier.fs" />
   </ItemGroup>
   <Import Project="$(FSharpTargetsPath)" />
 </Project>

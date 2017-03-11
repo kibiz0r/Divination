@@ -33,7 +33,14 @@ type Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'Proper
     | VarIdentity of
         string
         * 'Type
+    | LetIdentity of
+        Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
 with
+    override this.ToString () =
+        sprintf "%A" this
+
     override this.Equals other =
         match other with
         | :? Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> as o ->
@@ -43,21 +50,23 @@ with
     override this.GetHashCode () =
         match this with
         | Identifier i ->
-            (i :> obj).GetHashCode ()
+            ("Identifier", i :> obj).GetHashCode ()
         | CallIdentity (t, m, a) ->
-            (t :> obj, m :> obj, a).GetHashCode ()
+            ("CallIdentity", t :> obj, m :> obj, a).GetHashCode ()
         | ConstructorIdentity (c, a) ->
-            (c :> obj, a).GetHashCode ()
+            ("ConstructorIdentity", c :> obj, a).GetHashCode ()
         | PropertyGetIdentity (t, p, a) ->
-            (t :> obj, p :> obj, a).GetHashCode ()
+            ("PropertyGetIdentity", t :> obj, p :> obj, a).GetHashCode ()
         | ValueIdentity (v, t) ->
-            (v :> obj, t :> obj).GetHashCode ()
+            ("ValueIdentity", v :> obj, t :> obj).GetHashCode ()
         | CoerceIdentity (a, t) ->
-            (a :> obj, t :> obj).GetHashCode ()
+            ("CoerceIdentity", a :> obj, t :> obj).GetHashCode ()
         | NewUnionCaseIdentity (u, a) ->
-            (u :> obj, a).GetHashCode ()
+            ("NewUnionCaseIdentity", u :> obj, a).GetHashCode ()
         | VarIdentity (n, t) ->
-            (n :> obj, t :> obj).GetHashCode ()
+            ("VarIdentity", n :> obj, t :> obj).GetHashCode ()
+        | LetIdentity (v, a, b) ->
+            ("LetIdentity", v :> obj, a :> obj, b :> obj).GetHashCode ()
 
     interface IEquatable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>> with
         member this.Equals other =
@@ -70,36 +79,21 @@ with
                 (c :> obj, a).Equals ((c2 :> obj, a2))
             | PropertyGetIdentity (t, p, a), PropertyGetIdentity (t2, p2, a2) ->
                 (t :> obj, p :> obj, a).Equals ((t2 :> obj, p2 :> obj, a2))
+            | ValueIdentity (v, t), ValueIdentity (v2, t2) ->
+                (v :> obj, t :> obj).Equals ((v2 :> obj, t2 :> obj))
             | CoerceIdentity (a, t), CoerceIdentity (a2, t2) ->
                 (a :> obj, t :> obj).Equals ((a2 :> obj, t2 :> obj))
             | NewUnionCaseIdentity (u, a), NewUnionCaseIdentity (u2, a2) ->
                 (u :> obj, a).Equals ((u2 :> obj, a2))
             | VarIdentity (n, t), VarIdentity (n2, t2) ->
                 (n :> obj, t :> obj).Equals ((n2 :> obj, t2 :> obj))
+            | LetIdentity (v, a, b), LetIdentity (v2, a2, b2) ->
+                (v :> obj, a :> obj, b :> obj).Equals ((v2 :> obj, a2 :> obj, b2 :> obj))
             | _ -> false
 
     interface IComparable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>> with
         member this.CompareTo other =
-            let comparisonObj identity =
-                identity.GetHashCode ()
-                //match identity with
-                //| Identifier i ->
-                //    i :> obj
-                //| CallIdentity (t, m, a) ->
-                //    (t, m, a) :> obj
-                //| ConstructorIdentity (t, a) ->
-                //    (t, a) :> obj
-                //| PropertyGetIdentity (t, p, a) ->
-                //    (t, p, a) :> obj
-                //| ValueIdentity (v, t) ->
-                //    (v, t) :> obj
-                //| CoerceIdentity (a, t) ->
-                //    (a, t) :> obj
-                //| NewUnionCaseIdentity (u, a) ->
-                //    (u, a) :> obj
-                //| ArgumentIdentity (n) ->
-                //    n :> obj
-            Comparer.Default.Compare (comparisonObj this, comparisonObj other)
+            Comparer.Default.Compare (this.GetHashCode (), other.GetHashCode ())
 
     interface IComparable with
         member this.CompareTo other =
@@ -112,3 +106,39 @@ type Identity<'Identifier, 'Value> = Identity<'Identifier, 'Value, Type>
 type Identity<'Identifier> = Identity<'Identifier, obj>
 
 type Identity = Identity<obj>
+
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Identity =
+    let rec cast (identity : Identity<'Identifier, 'Value>) : Identity<'CastIdentifier, 'CastValue> =
+        match identity with
+        | Identifier identifier ->
+            Identifier ((identifier :> obj) :?> 'CastIdentifier)
+        | CallIdentity (this, methodInfo, arguments) ->
+            let this' =
+                match this with
+                | Some t -> Some (cast t)
+                | None -> None
+            let arguments' = List.map cast arguments
+            CallIdentity (this', methodInfo, arguments')
+        | ConstructorIdentity (constructorInfo, arguments) ->
+            let arguments' = List.map cast arguments
+            ConstructorIdentity (constructorInfo, arguments')
+        | PropertyGetIdentity (this, propertyInfo, arguments) ->
+            let this' =
+                match this with
+                | Some t -> Some (cast t)
+                | None -> None
+            let arguments' = List.map cast arguments
+            PropertyGetIdentity (this', propertyInfo, arguments')
+        | ValueIdentity (value, type') ->
+            ValueIdentity ((value :> obj) :?> 'CastValue, type')
+        | CoerceIdentity (argument, type') ->
+            let argument' = cast argument
+            CoerceIdentity (argument', type')
+        | NewUnionCaseIdentity (unionCaseInfo, arguments) ->
+            let arguments' = List.map cast arguments
+            NewUnionCaseIdentity (unionCaseInfo, arguments')
+        | VarIdentity (name, type') ->
+            VarIdentity (name, type')
+        | LetIdentity (var, argument, body) ->
+            LetIdentity (cast var, cast argument, cast body)

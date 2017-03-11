@@ -13,10 +13,10 @@ module ``One-argument constructors`` =
         let constructions = OneArgumentConstructorType.Constructed |> Observable.replay
         use __ = constructions.Connect ()
 
-        let myDivined =
+        let myDivined : Divined<OneArgumentConstructorType> =
             (divinable {
                 return OneArgumentConstructorType "hello"
-            }).Divine (Diviner.Current, IdentificationScope.empty ())
+            }).Divine (IdentificationScope.empty (), Diviner.Current)
 
         myDivined.Value |> should be instanceOfType<OneArgumentConstructorType>
         myDivined.Value.Str |> should equal "hello"

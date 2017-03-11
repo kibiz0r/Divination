@@ -12,11 +12,11 @@ module ``Custom-divining a constructor`` =
         let customOverride : obj = "this is actually an object" :> obj
         let myDiviner = {
             new Diviner () with
-                override this.Constructor<'T> (constructorInfo, arguments) =
+                override this.Constructor<'T> (scope, constructorInfo, arguments) =
                     customOverride :?> 'T
             }
         let myDivined =
             (divinable {
                 return obj ()
-            }).Divine (myDiviner, IdentificationScope.empty ())
+            }).Divine (IdentificationScope.empty (), myDiviner)
         myDivined.Value |> should equal customOverride
