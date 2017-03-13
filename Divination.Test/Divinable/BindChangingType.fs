@@ -16,6 +16,9 @@ module ``Binds changing type`` =
                 let! x = Divinable.value 5 : IDivinable<int>
                 return x.ToString ()
             }).Divine (IdentificationScope.empty (), Diviner.Current)
-        let expected = (CallIdentity (Some (ValueIdentity (5 :> obj, typeof<int>)), objToString, []) : Identity)
+        let expected = (
+            LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>),
+                CallIdentity (Some (VarIdentity "x"), objToString, [])
+            ) : Identity)
         myDivined.Identity |> should equal expected
         myDivined.Value |> should equal "5"

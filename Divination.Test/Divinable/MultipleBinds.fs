@@ -17,6 +17,11 @@ module ``Multiple binds`` =
                 let! y = Divinable.value 2 : IDivinable<int>
                 return x + y
             }).Divine (IdentificationScope.empty (), Diviner.Current)
-        myDivined.Identity |> should equal (CallIdentity (None, intAddition, [ValueIdentity (5 :> obj, typeof<int>); ValueIdentity (2 :> obj, typeof<int>)]) : Identity)
+        myDivined.Identity |> should equal (
+            LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>),
+                LetIdentity (VarIdentity "y", ValueIdentity (2 :> obj, typeof<int>),
+                    CallIdentity (None, intAddition, [VarIdentity "x"; VarIdentity "y"])
+                )
+            ) : Identity)
         myDivined.Value |> should equal 7
 

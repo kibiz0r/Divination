@@ -10,14 +10,14 @@ module Expr =
         member this.ToIdentity () =
             match this with
             | Var (var) ->
-                VarIdentity (var.Name, var.Type)
-            | ValueWithName (_, type', name) ->
-                VarIdentity (name, type')
+                VarIdentity (var.Name)
+            | ValueWithName (_, _, name) ->
+                VarIdentity (name)
             | Value (value, type') ->
                 ValueIdentity (value, type')
             | NewObject (constructorInfo, arguments) ->
                 let arguments' = List.map (fun (argument : Expr) -> argument.ToIdentity ()) arguments
-                ConstructorIdentity (constructorInfo, arguments')
+                NewObjectIdentity (constructorInfo, arguments')
             | Call (this', methodInfo, arguments) ->
                 let this'' =
                     match this' with
@@ -31,5 +31,5 @@ module Expr =
                 let arguments' = List.map (fun (argument : Expr) -> argument.ToIdentity ()) arguments
                 NewUnionCaseIdentity (unionCaseInfo, arguments')
             | Let (var, argument, body) ->
-                LetIdentity (VarIdentity (var.Name, var.Type), argument.ToIdentity (), body.ToIdentity ())
+                LetIdentity (VarIdentity (var.Name), argument.ToIdentity (), body.ToIdentity ())
             | _ -> invalidOp (this.ToString ())

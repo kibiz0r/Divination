@@ -102,6 +102,7 @@
     <Compile Include="Divinable\SimpleBind.fs" />
     <Compile Include="Divinable\MultipleBinds.fs" />
     <Compile Include="Divinable\BindChangingType.fs" />
+    <Compile Include="ExprDivinifierTest.fs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Divinable\" />

@@ -8,6 +8,14 @@ open FSharp.Quotations
 type IExprIdentifier<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
     abstract member ToIdentity : Expr -> Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
 
+type IExprIdentifier<'Identifier, 'Value, 'Type> = IExprIdentifier<'Identifier, 'Value, 'Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo>
+
+type IExprIdentifier<'Identifier, 'Value> = IExprIdentifier<'Identifier, 'Value, Type>
+
+type IExprIdentifier<'Identifier> = IExprIdentifier<'Identifier, obj>
+
+type IExprIdentifier = IExprIdentifier<obj>
+
 type ExprIdentifier<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> () =
     static let mutable current : IExprIdentifier<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> option = None
     static member Current

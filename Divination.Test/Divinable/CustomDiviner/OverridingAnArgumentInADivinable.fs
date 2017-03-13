@@ -18,12 +18,12 @@ module ``Custom-divining a divinable's argument`` =
         let customReturnValue = 7
         let myDiviner = {
             new Diviner () with
-                override this.Var<'T> (scope, name, type') =
+                override this.Var<'T> (scope, name) =
                     match name with
                     | "anArgument" ->
                         (5 :> obj) :?> 'T
                     | _ ->
-                        base.Var<'T> (scope, name, type')
+                        base.Var<'T> (scope, name)
             }
         let myDivined =
             (divinable {

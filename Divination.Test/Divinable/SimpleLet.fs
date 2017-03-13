@@ -22,6 +22,6 @@ module ``Simple let`` =
         let myDivined : Divined<int> =
             let divinable = Divinable.let' (Divinable.var "x") (Divinable.value 5) (Divinable.var "x")
             divinable.Divine (IdentificationScope.empty (), Diviner.Current)
-        let expected : Identity = LetIdentity (VarIdentity ("x", typeof<int>), ValueIdentity (5 :> obj, typeof<int>), VarIdentity ("x", typeof<int>))
+        let expected : Identity = LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>), VarIdentity "x")
         myDivined.Identity |> should equal expected
         myDivined.Value |> should equal 5

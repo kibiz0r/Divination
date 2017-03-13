@@ -14,7 +14,7 @@ type Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'Proper
         Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> option
         * 'MethodInfo
         * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
-    | ConstructorIdentity of
+    | NewObjectIdentity of
         'ConstructorInfo
         * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
     | PropertyGetIdentity of
@@ -32,7 +32,6 @@ type Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'Proper
         * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
     | VarIdentity of
         string
-        * 'Type
     | LetIdentity of
         Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
         * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
@@ -53,8 +52,8 @@ with
             ("Identifier", i :> obj).GetHashCode ()
         | CallIdentity (t, m, a) ->
             ("CallIdentity", t :> obj, m :> obj, a).GetHashCode ()
-        | ConstructorIdentity (c, a) ->
-            ("ConstructorIdentity", c :> obj, a).GetHashCode ()
+        | NewObjectIdentity (c, a) ->
+            ("NewObjectIdentity", c :> obj, a).GetHashCode ()
         | PropertyGetIdentity (t, p, a) ->
             ("PropertyGetIdentity", t :> obj, p :> obj, a).GetHashCode ()
         | ValueIdentity (v, t) ->
@@ -63,8 +62,8 @@ with
             ("CoerceIdentity", a :> obj, t :> obj).GetHashCode ()
         | NewUnionCaseIdentity (u, a) ->
             ("NewUnionCaseIdentity", u :> obj, a).GetHashCode ()
-        | VarIdentity (n, t) ->
-            ("VarIdentity", n :> obj, t :> obj).GetHashCode ()
+        | VarIdentity (n) ->
+            ("VarIdentity", n :> obj).GetHashCode ()
         | LetIdentity (v, a, b) ->
             ("LetIdentity", v :> obj, a :> obj, b :> obj).GetHashCode ()
 
@@ -75,7 +74,7 @@ with
                 (i :> obj).Equals i2
             | CallIdentity (t, m, a), CallIdentity (t2, m2, a2) ->
                 (t :> obj, m :> obj, a).Equals ((t2 :> obj, m2 :> obj, a2))
-            | ConstructorIdentity (c, a), ConstructorIdentity (c2, a2) ->
+            | NewObjectIdentity (c, a), NewObjectIdentity (c2, a2) ->
                 (c :> obj, a).Equals ((c2 :> obj, a2))
             | PropertyGetIdentity (t, p, a), PropertyGetIdentity (t2, p2, a2) ->
                 (t :> obj, p :> obj, a).Equals ((t2 :> obj, p2 :> obj, a2))
@@ -85,8 +84,8 @@ with
                 (a :> obj, t :> obj).Equals ((a2 :> obj, t2 :> obj))
             | NewUnionCaseIdentity (u, a), NewUnionCaseIdentity (u2, a2) ->
                 (u :> obj, a).Equals ((u2 :> obj, a2))
-            | VarIdentity (n, t), VarIdentity (n2, t2) ->
-                (n :> obj, t :> obj).Equals ((n2 :> obj, t2 :> obj))
+            | VarIdentity (n), VarIdentity (n2) ->
+                (n :> obj).Equals n2
             | LetIdentity (v, a, b), LetIdentity (v2, a2, b2) ->
                 (v :> obj, a :> obj, b :> obj).Equals ((v2 :> obj, a2 :> obj, b2 :> obj))
             | _ -> false
@@ -120,9 +119,9 @@ module Identity =
                 | None -> None
             let arguments' = List.map cast arguments
             CallIdentity (this', methodInfo, arguments')
-        | ConstructorIdentity (constructorInfo, arguments) ->
+        | NewObjectIdentity (constructorInfo, arguments) ->
             let arguments' = List.map cast arguments
-            ConstructorIdentity (constructorInfo, arguments')
+            NewObjectIdentity (constructorInfo, arguments')
         | PropertyGetIdentity (this, propertyInfo, arguments) ->
             let this' =
                 match this with
@@ -138,7 +137,7 @@ module Identity =
         | NewUnionCaseIdentity (unionCaseInfo, arguments) ->
             let arguments' = List.map cast arguments
             NewUnionCaseIdentity (unionCaseInfo, arguments')
-        | VarIdentity (name, type') ->
-            VarIdentity (name, type')
+        | VarIdentity (name) ->
+            VarIdentity (name)
         | LetIdentity (var, argument, body) ->
             LetIdentity (cast var, cast argument, cast body)

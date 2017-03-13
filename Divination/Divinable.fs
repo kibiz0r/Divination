@@ -18,6 +18,15 @@ type Divinable<'T, 'Identifier> = Divinable<'T, 'Identifier, obj>
 type Divinable<'T> = Divinable<'T, obj>
 
 module Divinable =
+    let cast (divinable : 'T when 'T :> IDivinableBase<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : IDivinable<'U, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+        match divinable :> obj with
+        | :? IDivinable<'U, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> as casted ->
+            casted
+        | _ ->
+            Divinable<'U, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> (fun (scope, diviner) ->
+                divinable.Identify (scope, diviner)
+            ) :> _
+
     let mergeScope (overridingScope : IdentificationScope<_, _, _, _, _, _, _>) (divinable : IDivinable<'T, _, _, _, _, _, _, _>) : IDivinable<'T, _, _, _, _, _, _, _> =
         Divinable<'T, _, _, _, _, _, _, _> (fun (originalScope, diviner) ->
             divinable.Identify (IdentificationScope.merge overridingScope originalScope, diviner)
@@ -33,7 +42,7 @@ module Divinable =
 
     let var (name : string) : IDivinable<'T, _> =
         Divinable<'T, _, _, _, _, _, _, _> (fun (scope, diviner) ->
-            VarIdentity (name, typeof<'T>)
+            VarIdentity (name)
         ) :> _
 
     let value (value : 'T) : IDivinable<'T, _> =

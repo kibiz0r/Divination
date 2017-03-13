@@ -14,8 +14,8 @@ module Diviner =
                         this.Identifier (scope, identifier)
                     | CallIdentity (this', methodInfo, arguments) ->
                         this.Call<'T> (scope, this', methodInfo, arguments)
-                    | ConstructorIdentity (constructorInfo, arguments) ->
-                        this.Constructor<'T> (scope, constructorInfo, arguments)
+                    | NewObjectIdentity (constructorInfo, arguments) ->
+                        this.NewObject<'T> (scope, constructorInfo, arguments)
                     | PropertyGetIdentity (this', propertyInfo, arguments) ->
                         this.PropertyGet<'T> (scope, this', propertyInfo, arguments)
                     | ValueIdentity (value, type') ->
@@ -24,8 +24,8 @@ module Diviner =
                         this.Coerce<'T> (scope, argument, type')
                     | NewUnionCaseIdentity (unionCaseInfo, arguments) ->
                         this.NewUnionCase<'T> (scope, unionCaseInfo, arguments)
-                    | VarIdentity (name, type') ->
-                        this.Var<'T> (scope, name, type')
+                    | VarIdentity (name) ->
+                        this.Var<'T> (scope, name)
                     | LetIdentity (var, argument, body) ->
                         this.Let<'T> (scope, var, argument, body)
             match IdentificationScope.tryFind identity scope with
@@ -65,8 +65,8 @@ type Diviner () =
         let arguments' = List.map (fun (argument : Identity) -> this.ResolveValue<obj> (scope, argument)) arguments |> List.toArray
         methodInfo.Invoke (this'', arguments') :?> 'T
 
-    abstract member Constructor<'T> : IdentificationScope * ConstructorInfo * Identity list -> 'T
-    default this.Constructor<'T> (scope, constructorInfo, arguments) =
+    abstract member NewObject<'T> : IdentificationScope * ConstructorInfo * Identity list -> 'T
+    default this.NewObject<'T> (scope, constructorInfo, arguments) =
         let arguments' = List.map (fun (argument : Identity) -> this.ResolveValue<obj> (scope, argument)) arguments |> List.toArray
         constructorInfo.Invoke (arguments') :?> 'T
 
@@ -94,9 +94,9 @@ type Diviner () =
         let arguments' = List.map (fun (argument : Identity) -> this.ResolveValue<obj> (scope, argument)) arguments |> List.toArray
         FSharpValue.MakeUnion (unionCaseInfo, arguments') :?> 'T
 
-    abstract member Var<'T> : IdentificationScope * string * Type -> 'T
-    default this.Var<'T> (scope, name, type') : 'T =
-        invalidOp (sprintf "Unbound Var %s : %A" name type')
+    abstract member Var<'T> : IdentificationScope * string -> 'T
+    default this.Var<'T> (scope, name) : 'T =
+        invalidOp (sprintf "Unbound Var: %s" name)
 
     abstract member Let<'T> : IdentificationScope * Identity * Identity * Identity -> 'T
     default this.Let<'T> (scope, var, argument, body) : 'T =
@@ -109,8 +109,8 @@ type Diviner () =
         member this.Call<'T> (scope, this', methodInfo, arguments) =
             this.Call<'T> (scope, this', methodInfo, arguments)
         
-        member this.Constructor<'T> (scope, constructorInfo, arguments) =
-            this.Constructor<'T> (scope, constructorInfo, arguments)
+        member this.NewObject<'T> (scope, constructorInfo, arguments) =
+            this.NewObject<'T> (scope, constructorInfo, arguments)
         
         member this.PropertyGet<'T> (scope, this', propertyInfo, arguments) =
             this.PropertyGet<'T> (scope, this', propertyInfo, arguments)
@@ -124,8 +124,8 @@ type Diviner () =
         member this.NewUnionCase<'T> (scope, unionCaseInfo, arguments) =
             this.NewUnionCase<'T> (scope, unionCaseInfo, arguments)
 
-        member this.Var<'T> (scope, name, type') =
-            this.Var<'T> (scope, name, type')
+        member this.Var<'T> (scope, name) =
+            this.Var<'T> (scope, name)
 
         member this.Let<'T> (scope, var, argument, body) =
             this.Let<'T> (scope, var, argument, body)
