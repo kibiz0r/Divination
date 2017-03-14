@@ -87,6 +87,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Divinable\" />
+    <Folder Include="Divinable\CustomDiviner\" />
+    <Folder Include="Divinable\Builder\" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="Utils.fs" />
     <Compile Include="DivinableBuilderTest.fs" />
     <None Include="packages.config" />
@@ -102,11 +107,8 @@
     <Compile Include="Divinable\SimpleBind.fs" />
     <Compile Include="Divinable\MultipleBinds.fs" />
     <Compile Include="Divinable\BindChangingType.fs" />
+    <Compile Include="Divinable\ForwardingScope.fs" />
     <Compile Include="ExprDivinifierTest.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Divinable\" />
-    <Folder Include="Divinable\CustomDiviner\" />
   </ItemGroup>
   <Import Project="$(FSharpTargetsPath)" />
 </Project>

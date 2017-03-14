@@ -128,8 +128,10 @@ type DivinableBuilder () as this =
                                     | Lambda (lambdaVar, Let (letVar, letArgument, letBody)) ->
                                         let bindArgument = DivinableBase (fun (scope, diviner) ->
                                             let bindArgumentExprDivinable = exprDivinifier.ToDivinableBase bindArgumentExpr
-                                            let bindArgumentExprIdentity = bindArgumentExprDivinable.Identify (scope, diviner)
-                                            let bindArgumentDivinable = diviner.ResolveValue<IDivinableBase> (scope, bindArgumentExprIdentity)
+                                            let theContext = (scope, diviner)
+                                            let contextDoSomething (divinable : IDivinableBase) =
+                                                diviner.ResolveValue<IDivinableBase> (scope, divinable.Identify theContext)
+                                            let bindArgumentDivinable = diviner.ResolveValue<IDivinableBase> (scope, bindArgumentExprDivinable.Identify (scope, diviner))
                                             let bindArgumentIdentity = bindArgumentDivinable.Identify (scope, diviner)
                                             bindArgumentIdentity
                                         )
