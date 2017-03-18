@@ -9,14 +9,16 @@ open Divination
 module ``Custom-divining a constructor`` =
     [<Test>]
     let ``allows replacing with something else entirely`` () =
-        let customOverride : obj = "this is actually an object" :> obj
+        let customOverride : obj = "this is my new return value" :> obj
         let myDiviner = {
-            new Diviner () with
-                override this.NewObject<'T> (scope, constructorInfo, arguments) =
-                    customOverride :?> 'T
+            new FSharpDiviner () with
+                override this.NewObject (scope, constructorInfo, arguments) =
+                    customOverride
             }
         let myDivined =
-            (divinable {
-                return obj ()
-            }).Divine (IdentificationScope.empty (), myDiviner)
+            FSharpDiviner.Current.Divine (IdentificationScope.empty (),
+                divinable {
+                    return obj ()
+                }
+            )
         myDivined.Value |> should equal customOverride

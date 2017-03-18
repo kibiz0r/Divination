@@ -98,46 +98,39 @@ with
         member this.CompareTo other =
             (this :> IComparable<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>>).CompareTo (other :?> Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
 
-type Identity<'Identifier, 'Value, 'Type> = Identity<'Identifier, 'Value, 'Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo>
-
-type Identity<'Identifier, 'Value> = Identity<'Identifier, 'Value, Type>
-
-type Identity<'Identifier> = Identity<'Identifier, obj>
-
-type Identity = Identity<obj>
-
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Identity =
-    let rec cast (identity : Identity<'Identifier, 'Value>) : Identity<'CastIdentifier, 'CastValue> =
-        match identity with
-        | Identifier identifier ->
-            Identifier ((identifier :> obj) :?> 'CastIdentifier)
-        | CallIdentity (this, methodInfo, arguments) ->
-            let this' =
-                match this with
-                | Some t -> Some (cast t)
-                | None -> None
-            let arguments' = List.map cast arguments
-            CallIdentity (this', methodInfo, arguments')
-        | NewObjectIdentity (constructorInfo, arguments) ->
-            let arguments' = List.map cast arguments
-            NewObjectIdentity (constructorInfo, arguments')
-        | PropertyGetIdentity (this, propertyInfo, arguments) ->
-            let this' =
-                match this with
-                | Some t -> Some (cast t)
-                | None -> None
-            let arguments' = List.map cast arguments
-            PropertyGetIdentity (this', propertyInfo, arguments')
-        | ValueIdentity (value, type') ->
-            ValueIdentity ((value :> obj) :?> 'CastValue, type')
-        | CoerceIdentity (argument, type') ->
-            let argument' = cast argument
-            CoerceIdentity (argument', type')
-        | NewUnionCaseIdentity (unionCaseInfo, arguments) ->
-            let arguments' = List.map cast arguments
-            NewUnionCaseIdentity (unionCaseInfo, arguments')
-        | VarIdentity (name) ->
-            VarIdentity (name)
-        | LetIdentity (var, argument, body) ->
-            LetIdentity (cast var, cast argument, cast body)
+    let _ = obj ()
+    //let rec cast (identity : Identity<'Identifier, 'Value>) : Identity<'CastIdentifier, 'CastValue> =
+    //    match identity with
+    //    | Identifier identifier ->
+    //        Identifier ((identifier :> obj) :?> 'CastIdentifier)
+    //    | CallIdentity (this, methodInfo, arguments) ->
+    //        let this' =
+    //            match this with
+    //            | Some t -> Some (cast t)
+    //            | None -> None
+    //        let arguments' = List.map cast arguments
+    //        CallIdentity (this', methodInfo, arguments')
+    //    | NewObjectIdentity (constructorInfo, arguments) ->
+    //        let arguments' = List.map cast arguments
+    //        NewObjectIdentity (constructorInfo, arguments')
+    //    | PropertyGetIdentity (this, propertyInfo, arguments) ->
+    //        let this' =
+    //            match this with
+    //            | Some t -> Some (cast t)
+    //            | None -> None
+    //        let arguments' = List.map cast arguments
+    //        PropertyGetIdentity (this', propertyInfo, arguments')
+    //    | ValueIdentity (value, type') ->
+    //        ValueIdentity ((value :> obj) :?> 'CastValue, type')
+    //    | CoerceIdentity (argument, type') ->
+    //        let argument' = cast argument
+    //        CoerceIdentity (argument', type')
+    //    | NewUnionCaseIdentity (unionCaseInfo, arguments) ->
+    //        let arguments' = List.map cast arguments
+    //        NewUnionCaseIdentity (unionCaseInfo, arguments')
+    //    | VarIdentity (name) ->
+    //        VarIdentity (name)
+    //    | LetIdentity (var, argument, body) ->
+    //        LetIdentity (cast var, cast argument, cast body)

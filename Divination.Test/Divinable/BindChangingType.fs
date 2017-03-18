@@ -12,10 +12,12 @@ module ``Binds changing type`` =
     let ``works`` () =
         let objToString = <@ (obj ()).ToString () @>.ToMethodInfo ()
         let myDivined : Divined<string> =
-            (divinable {
-                let! x = Divinable.value 5 : IDivinable<int>
-                return x.ToString ()
-            }).Divine (IdentificationScope.empty (), Diviner.Current)
+            FSharpDiviner.Current.Divine (IdentificationScope.empty (),
+                divinable {
+                    let! x = Divinable.value (5 :> obj, typeof<int>) : IDivinable<int>
+                    return x.ToString ()
+                }
+            )
         let expected = (
             LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>),
                 CallIdentity (Some (VarIdentity "x"), objToString, [])

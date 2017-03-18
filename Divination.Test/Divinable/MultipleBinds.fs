@@ -12,11 +12,13 @@ module ``Multiple binds`` =
     let ``works`` () =
         let intAddition = <@ 1 + 1 @>.ToMethodInfo ()
         let myDivined : Divined<int> =
-            (divinable {
-                let! x = Divinable.value 5 : IDivinable<int>
-                let! y = Divinable.value 2 : IDivinable<int>
-                return x + y
-            }).Divine (IdentificationScope.empty (), Diviner.Current)
+            FSharpDiviner.Current.Divine (IdentificationScope.empty (),
+                divinable {
+                    let! x = Divinable.value (5 :> obj, typeof<int>) : IDivinable<int>
+                    let! y = Divinable.value (2 :> obj, typeof<int>) : IDivinable<int>
+                    return x + y
+                }
+            )
         myDivined.Identity |> should equal (
             LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>),
                 LetIdentity (VarIdentity "y", ValueIdentity (2 :> obj, typeof<int>),

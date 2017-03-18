@@ -14,9 +14,11 @@ module ``No-argument constructors`` =
         use __ = constructions.Connect ()
 
         let myDivined =
-            (divinable {
-                return NoArgumentConstructorType ()
-            }).Divine (IdentificationScope.empty (), Diviner.Current)
+            FSharpDiviner.Current.Divine (IdentificationScope.empty (),
+                divinable {
+                    return NoArgumentConstructorType ()
+                }
+            )
 
         myDivined.Value |> should be instanceOfType<NoArgumentConstructorType>
         constructions |> Observable.toConnectedList |> should equal [()]

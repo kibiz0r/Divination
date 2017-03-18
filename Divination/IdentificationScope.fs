@@ -7,25 +7,30 @@ open FSharp.Reflection
 type IdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> = {
     Bindings : Map<Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>>
 }
-
-type IdentificationScope<'Identifier, 'Value, 'Type> = IdentificationScope<'Identifier, 'Value, 'Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo>
-
-type IdentificationScope<'Identifier, 'Value> = IdentificationScope<'Identifier, 'Value, Type>
-
-type IdentificationScope<'Identifier> = IdentificationScope<'Identifier, obj>
-
-type IdentificationScope = IdentificationScope<obj>
+with
+    interface IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> with
+        member this.Bindings = this.Bindings
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module IdentificationScope =
-    let empty () : IdentificationScope =
+    let empty () : IdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
         { Bindings = Map.empty }
 
-    let add (source : Identity<_, _, _, _, _, _, _>) (bound : Identity<_, _, _, _, _, _, _>) (scope : IdentificationScope<_, _, _, _, _, _, _>) : IdentificationScope<_, _, _, _, _, _, _> =
-        { Bindings = Map.add source bound scope.Bindings }
+    let add
+        (source : Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
+        (bound : Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
+        (scope : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
+        : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+        { Bindings = Map.add source bound scope.Bindings } :> _
 
-    let tryFind (source : Identity<_, _, _, _, _, _, _>) (scope : IdentificationScope<_, _, _, _, _, _, _>) : Identity<_, _, _, _, _, _, _> option =
+    let tryFind
+        (source : Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
+        (scope : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
+        : Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> option =
         Map.tryFind source scope.Bindings
 
-    let merge (overridingScope : IdentificationScope<_, _, _, _, _, _, _>) (originalScope : IdentificationScope<_, _, _, _, _, _, _>) : IdentificationScope<_, _, _, _, _, _, _> =
+    let merge
+        (overridingScope : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
+        (originalScope : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
+        : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
         overridingScope

@@ -40,19 +40,21 @@ module ``Custom-divining a divinable's argument`` =
     let ``allows overriding arguments to the divinable`` () =
         let customReturnValue = 7
         let myDiviner = {
-            new Diviner () with
-                override this.Var<'T> (scope, name) =
+            new FSharpDiviner () with
+                override this.Var (scope, name) =
                     match name with
                     | "anArgument" ->
-                        (5 :> obj) :?> 'T
+                        5 :> _
                     | _ ->
-                        base.Var<'T> (scope, name)
+                        base.Var (scope, name)
             }
         let myDivined =
-            (divinable {
-                let myArgument = 1
-                let! returnValue = MyModule.aFuncThatAcceptsAnArgumentAndReturnsDivinable myArgument
-                let someValue = "foo"
-                return returnValue
-            }).Divine (IdentificationScope.empty (), myDiviner)
+            FSharpDiviner.Current.Divine (IdentificationScope.empty (),
+                divinable {
+                    let myArgument = 1
+                    let! returnValue = MyModule.aFuncThatAcceptsAnArgumentAndReturnsDivinable myArgument
+                    let someValue = "foo"
+                    return returnValue
+                }
+            )
         myDivined.Value |> should equal customReturnValue

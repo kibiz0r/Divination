@@ -11,9 +11,11 @@ module ``Simple bind`` =
     [<Test>]
     let ``works`` () =
         let myDivined : Divined<int> =
-            (divinable {
-                let! x = Divinable.value 5 : IDivinable<int>
-                return x
-            }).Divine (IdentificationScope.empty (), Diviner.Current)
+            FSharpDiviner.Current.Divine (IdentificationScope.empty (),
+                divinable {
+                    let! x = Divinable.value (5 :> obj, typeof<int>)
+                    return x
+                }
+            )
         myDivined.Identity |> should equal (LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>), VarIdentity "x") : Identity)
         myDivined.Value |> should equal 5

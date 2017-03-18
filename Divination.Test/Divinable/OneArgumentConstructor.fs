@@ -14,9 +14,11 @@ module ``One-argument constructors`` =
         use __ = constructions.Connect ()
 
         let myDivined : Divined<OneArgumentConstructorType> =
-            (divinable {
-                return OneArgumentConstructorType "hello"
-            }).Divine (IdentificationScope.empty (), Diviner.Current)
+            FSharpDiviner.Current.Divine (IdentificationScope.empty (),
+                divinable {
+                    return OneArgumentConstructorType "hello"
+                }
+            )
 
         myDivined.Value |> should be instanceOfType<OneArgumentConstructorType>
         myDivined.Value.Str |> should equal "hello"

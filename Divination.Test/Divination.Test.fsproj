@@ -107,7 +107,6 @@
     <Compile Include="Divinable\SimpleBind.fs" />
     <Compile Include="Divinable\MultipleBinds.fs" />
     <Compile Include="Divinable\BindChangingType.fs" />
-    <Compile Include="Divinable\ForwardingScope.fs" />
     <Compile Include="ExprDivinifierTest.fs" />
   </ItemGroup>
   <Import Project="$(FSharpTargetsPath)" />

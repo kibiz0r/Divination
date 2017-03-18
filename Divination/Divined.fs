@@ -4,6 +4,13 @@ open System
 open System.Reflection
 open FSharp.Reflection
 
+//type IDivinedBase<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+//    interface
+//    end
+
+//type IDivined<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+//    inherit IDivinedBase<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+
 // A Divined is a handle to a value that was materialized by giving an Identity to a Diviner.
 type Divined<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
     | DivinedValue of Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> * 'T
@@ -23,14 +30,6 @@ with
         match this with
         | DivinedValue (_, _) -> null
         | DivinedException (_, e) -> e
-
-type Divined<'T, 'Identifier, 'Value, 'Type> = Divined<'T, 'Identifier, 'Value, 'Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo>
-
-type Divined<'T, 'Identifier, 'Value> = Divined<'T, 'Identifier, 'Value, Type>
-
-type Divined<'T, 'Identifier> = Divined<'T, 'Identifier, obj>
-
-type Divined<'T> = Divined<'T, obj>
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Divined =

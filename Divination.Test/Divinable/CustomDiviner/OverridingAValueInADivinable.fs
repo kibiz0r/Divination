@@ -17,19 +17,21 @@ module ``Custom-divining a divinable's return value`` =
     let ``allows overriding values within the divinable`` () =
         let customString = "overriden return value"
         let myDiviner = {
-            new Diviner () with
-                override this.Value<'T> (scope, value, _) =
+            new FSharpDiviner () with
+                override this.Value (scope, value, _) =
                     match value with
                     | :? string as str ->
                         if str = "to override" then
-                            (customString :> obj) :?> 'T
+                            customString :> _
                         else
-                            (str :> obj) :?> 'T
-                    | other -> other :?> 'T
+                            str :> _
+                    | other -> other
             }
         let myDivined =
-            (divinable {
-                let! returnValue = MyModule.aFuncThatReturnsDivinable ()
-                return returnValue
-            }).Divine (IdentificationScope.empty (), myDiviner)
+            FSharpDiviner.Current.Divine (IdentificationScope.empty (),
+                divinable {
+                    let! returnValue = MyModule.aFuncThatReturnsDivinable ()
+                    return returnValue
+                }
+            )
         myDivined.Value |> should equal customString

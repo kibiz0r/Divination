@@ -8,6 +8,7 @@ open FSharp.Quotations.Patterns
 module Expr =
     type Expr with
         member this.ToIdentity () =
+            //ExprIdentifier.Current.ToIdentity this
             match this with
             | Var (var) ->
                 VarIdentity (var.Name)

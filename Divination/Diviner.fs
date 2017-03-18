@@ -4,102 +4,101 @@ open System
 open System.Reflection
 open FSharp.Reflection
 
-[<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Diviner =
-    let _ = obj ()
+[<AbstractClass>]
+type Diviner<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> () =
+    member this.DivineBase (scope : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, divinable : IDivinableBase<IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : Divined<obj, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+        let newContext = this.NewContext scope
+        let contextualized = divinable.Contextualize newContext
+        let identity = this.ResolveContext contextualized
+        let value = this.Identify (scope, identity)
+        DivinedValue (identity, value)
 
-type IFSharpDiviner<'Identifier> =
-    inherit IDiviner<'Identifier>
+    member this.Divine<'T> (scope : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, divinable : IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : Divined<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+        this.DivineBase (scope, divinable :> IDivinableBase<IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
+        |> Divined.cast
 
-type FSharpDiviner<'Identifier> () =
-    static let mutable current : IFSharpDiviner<'Identifier> option = None
-    static member Current
-        with get () =
-            match current with
-            | Some c -> c
-            | None ->
-                let c = FSharpDiviner<'Identifier> () :> IFSharpDiviner<'Identifier>
-                current <- Some c
-                c
-        and set (value) =
-            current <- Some value
+    interface IDiviner<IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> with
+        member this.DivineBase (scope, divinable) =
+            this.DivineBase (scope, divinable)
 
-    interface IFSharpDiviner<'Identifier>
+        member this.Divine<'T> (scope, divinable) =
+            this.Divine<'T> (scope, divinable)
 
-    inherit Diviner<'Identifier> ()
+    abstract member NewContext : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        -> IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
 
-    abstract member Identifier : obj -> obj
-    default this.Identifier (identifier) =
-        raise (NotImplementedException "FSharpDiviner does not handle Identifiers")
+    abstract member ResolveContext : IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        -> Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
 
-    abstract member Call : Identity option * MethodInfo * Identity list -> obj
-    default this.Call (this', methodInfo, arguments) =
-        let this'' =
-            match this' with
-            | Some t -> this.ResolveValue<obj> (scope, t)
-            | None -> null
-        let arguments' = List.map (fun (argument : Identity) -> this.ResolveValue<obj> (scope, argument)) arguments |> List.toArray
-        methodInfo.Invoke (this'', arguments')
+    abstract member Identify : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        -> obj
+    default this.Identify (scope, identity) =
+        match IdentificationScope.tryFind identity scope with
+        | Some i -> this.Identify (scope, i)
+        | None ->
+            match identity with
+            | Identifier identifier ->
+                this.Identifier (scope, identifier)
+            | CallIdentity (this', methodInfo, arguments) ->
+                this.Call (scope, this', methodInfo, arguments)
+            | NewObjectIdentity (constructorInfo, arguments) ->
+                this.NewObject (scope, constructorInfo, arguments)
+            | PropertyGetIdentity (this', propertyInfo, arguments) ->
+                this.PropertyGet (scope, this', propertyInfo, arguments)
+            | ValueIdentity (value, type') ->
+                this.Value (scope, value, type')
+            | CoerceIdentity (argument, type') ->
+                this.Coerce (scope, argument, type')
+            | NewUnionCaseIdentity (unionCaseInfo, arguments) ->
+                this.NewUnionCase (scope, unionCaseInfo, arguments)
+            | VarIdentity name ->
+                this.Var (scope, name)
+            | LetIdentity (var, argument, body) ->
+                this.Let (scope, var, argument, body)
 
-    abstract member NewObject : ConstructorInfo * Identity list -> obj
-    default this.NewObject (scope, constructorInfo, arguments) =
-        let arguments' = List.map (fun (argument : Identity) -> this.ResolveValue<obj> (scope, argument)) arguments |> List.toArray
-        constructorInfo.Invoke (arguments')
+    abstract member Identifier : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * 'Identifier
+        -> obj
 
-    abstract member PropertyGet : Identity option * PropertyInfo * Identity list -> obj
-    default this.PropertyGet (scope, this', propertyInfo, arguments) =
-        let this'' =
-            match this' with
-            | Some t -> this.ResolveValue<obj> (scope, t)
-            | None -> null
-        let arguments' = List.map (fun (argument : Identity) -> this.ResolveValue<obj> (scope, argument)) arguments |> List.toArray
-        propertyInfo.GetValue (this'', arguments')
+    abstract member Call : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> option
+        * 'MethodInfo
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
+        -> obj
+    
+    abstract member NewObject : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * 'ConstructorInfo
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
+        -> obj
+    
+    abstract member PropertyGet : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> option
+        * 'PropertyInfo
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
+        -> obj
 
-    abstract member Value : obj * Type -> obj
-    default this.Value (value, type') =
-        Convert.ChangeType (value, type')
+    abstract member Value : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * 'Value
+        * 'Type
+        -> obj
 
-    abstract member Coerce : Identity * Type -> obj
-    default this.Coerce (argument, type') =
-        Convert.ChangeType (this.Identify argument, type')
+    abstract member Coerce : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * 'Type
+        -> obj
 
-    abstract member NewUnionCase : UnionCaseInfo * Identity list -> obj
-    default this.NewUnionCase (unionCaseInfo, arguments) =
-        let arguments' = List.map this.Identify arguments |> List.toArray
-        FSharpValue.MakeUnion (unionCaseInfo, arguments')
+    abstract member NewUnionCase : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * 'UnionCaseInfo
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
+        -> obj
 
-    abstract member Var : string -> obj
-    default this.Var (name) =
-        invalidOp (sprintf "Unbound Var: %s" name)
+    abstract member Var : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * string
+        -> obj
 
-    abstract member Let : IdentificationScope * Identity * Identity * Identity -> obj
-    default this.Let (scope, var, argument, body) =
-        this.ResolveValue<'T> (IdentificationScope.add var argument scope, body)
-
-    interface IDiviner with
-        member this.Identifier<'T> (scope, identifier) =
-            this.Identifier<'T> (scope, identifier)
-
-        member this.Call<'T> (scope, this', methodInfo, arguments) =
-            this.Call<'T> (scope, this', methodInfo, arguments)
-        
-        member this.NewObject<'T> (scope, constructorInfo, arguments) =
-            this.NewObject<'T> (scope, constructorInfo, arguments)
-        
-        member this.PropertyGet<'T> (scope, this', propertyInfo, arguments) =
-            this.PropertyGet<'T> (scope, this', propertyInfo, arguments)
-
-        member this.Value<'T> (scope, value, type') =
-            this.Value<'T> (scope, value, type')
-
-        member this.Coerce<'T> (scope, argument, type') =
-            this.Coerce<'T> (scope, argument, type')
-
-        member this.NewUnionCase<'T> (scope, unionCaseInfo, arguments) =
-            this.NewUnionCase<'T> (scope, unionCaseInfo, arguments)
-
-        member this.Var<'T> (scope, name) =
-            this.Var<'T> (scope, name)
-
-        member this.Let<'T> (scope, var, argument, body) =
-            this.Let<'T> (scope, var, argument, body)
+    abstract member Let : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        -> obj

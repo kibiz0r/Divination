@@ -22,9 +22,11 @@ module ``Already-bound no-argument constructors`` =
             //IdentificationScope.add constructorIdentity someSpecialIdentityISuppose? scope
 
         let myDivined =
-            (divinable {
-                return NoArgumentConstructorType ()
-            }).Divine (myScope, Diviner.Current)
+            FSharpDiviner.Current.Divine (myScope,
+                divinable {
+                    return NoArgumentConstructorType ()
+                }
+            )
 
         constructions |> Observable.toConnectedList |> should equal []
         myDivined.Value |> should equal myAlreadyConstructed

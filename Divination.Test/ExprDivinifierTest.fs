@@ -15,11 +15,14 @@ module ``ExprDivinifier`` =
     let ``divinifies Exprs normally`` () =
         let exprDivinifier = ExprDivinifier () :> IExprDivinifier
         let identity =
-            exprDivinifier.ToDivinable(
-                <@
-                let x = 5
-                x
-                @>).Identify (IdentificationScope.empty (), Diviner.Current)
+            let divinable =
+                exprDivinifier.ToDivinable(
+                    <@
+                    let x = 5
+                    x
+                    @>
+                )
+            (FSharpDiviner.Current.Divine (IdentificationScope.empty (), divinable)).Identity
         identity |> should equal (LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>), VarIdentity "x") : Identity)
 
     type FakeBuilder () =
@@ -43,9 +46,12 @@ module ``ExprDivinifier`` =
                     | _ -> None
                 ) :> _
         let identity =
-            exprDivinifier.ToDivinable(
-                <@
-                let x = 5
-                FakeBuilder.Return x
-                @>).Identify (IdentificationScope.empty (), Diviner.Current)
+            let divinable =
+                exprDivinifier.ToDivinable(
+                    <@
+                    let x = 5
+                    FakeBuilder.Return x
+                    @>
+                )
+            (FSharpDiviner.Current.Divine (IdentificationScope.empty (), divinable)).Identity
         identity |> should equal (LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>), VarIdentity "x") : Identity)

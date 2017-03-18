@@ -30,79 +30,79 @@ type DivinableBuilder () as this =
         // 
         invalidOp "" : IDivinable<'U>
 
-    member this.BindExpr<'T, 'U> (argumentExpr : Expr(*<IDivinable<'T>>*), bodyExpr : Expr(*<'T -> IDivinable<'U>>*)) : IDivinable<'U> =
-        let argumentDivinable = this.DivinableExprToScopedDivinable<'T> (argumentExpr)
-        Divinable<'U> (fun (scope, diviner) ->
-            let argumentDivinableType = argumentDivinable.GetType ()
-            let argumentDivinableInterfaceType = argumentDivinableType.GetInterfaces () |> Array.find (fun i -> i.Name.StartsWith "IDivinable")
-            let argumentIdentifyMethod = argumentDivinableInterfaceType.GetMethod ("Identify")
-            let argumentIdentifyReturnValue = argumentIdentifyMethod.Invoke (argumentDivinable, [|scope; diviner|])
-            let argumentIdentity = argumentIdentifyReturnValue :?> Identity
-            match bodyExpr with
-            | Lambda (_, Let (letVar, _, letBody)) ->
-                let bodyIdentity = letBody.ToIdentity ()
-                bodyIdentity
-            | _ -> invalidOp ""
-        ) :> _
+    //member this.BindExpr<'T, 'U> (argumentExpr : Expr(*<IDivinable<'T>>*), bodyExpr : Expr(*<'T -> IDivinable<'U>>*)) : IDivinable<'U> =
+    //    let argumentDivinable = this.DivinableExprToScopedDivinable<'T> (argumentExpr)
+    //    Divinable<'U> (fun (scope, diviner) ->
+    //        let argumentDivinableType = argumentDivinable.GetType ()
+    //        let argumentDivinableInterfaceType = argumentDivinableType.GetInterfaces () |> Array.find (fun i -> i.Name.StartsWith "IDivinable")
+    //        let argumentIdentifyMethod = argumentDivinableInterfaceType.GetMethod ("Identify")
+    //        let argumentIdentifyReturnValue = argumentIdentifyMethod.Invoke (argumentDivinable, [|scope; diviner|])
+    //        let argumentIdentity = argumentIdentifyReturnValue :?> Identity
+    //        match bodyExpr with
+    //        | Lambda (_, Let (letVar, _, letBody)) ->
+    //            let bodyIdentity = letBody.ToIdentity ()
+    //            bodyIdentity
+    //        | _ -> invalidOp ""
+    //    ) :> _
 
-    member this.BindExprWrapper (argumentExpr : Expr, bodyExpr : Expr, argumentType : Type, returnType : Type) =
-        match <@ this.BindExpr<obj, obj> (obj () :?> _, obj () :?> _) @> with
-        | Call (_, objMethodInfo, _) ->
-            let methodDefinition = objMethodInfo.GetGenericMethodDefinition ()
-            let targetMethodInfo = methodDefinition.MakeGenericMethod [|argumentType; returnType|]
-            targetMethodInfo.Invoke (this, [|argumentExpr; bodyExpr|])
-        | _ -> invalidOp ""
+    //member this.BindExprWrapper (argumentExpr : Expr, bodyExpr : Expr, argumentType : Type, returnType : Type) =
+    //    match <@ this.BindExpr<obj, obj> (obj () :?> _, obj () :?> _) @> with
+    //    | Call (_, objMethodInfo, _) ->
+    //        let methodDefinition = objMethodInfo.GetGenericMethodDefinition ()
+    //        let targetMethodInfo = methodDefinition.MakeGenericMethod [|argumentType; returnType|]
+    //        targetMethodInfo.Invoke (this, [|argumentExpr; bodyExpr|])
+    //    | _ -> invalidOp ""
 
-    member this.IdentifyBindArgumentExpr (scope : IdentificationScope, diviner : IDiviner, argumentExpr : Expr, argumentType : Type) : Identity =
-        let argumentDivinable = this.DivinableExprToScopedDivinableWrapper (argumentExpr, argumentType)
-        let argumentDivinableType = argumentExpr.Type
-        //let argumentDivinableInterfaceType = argumentDivinableType.GetInterfaces () |> Array.find (fun i -> i.Name.StartsWith "IDivinable")
-        let argumentIdentifyMethod = argumentDivinableType.GetMethod ("Identify")
-        let argumentIdentifyReturnValue = argumentIdentifyMethod.Invoke (argumentDivinable, [|scope; diviner|])
-        let argumentIdentity = argumentIdentifyReturnValue :?> Identity
-        argumentIdentity
+    //member this.IdentifyBindArgumentExpr (scope : IdentificationScope, diviner : IDiviner, argumentExpr : Expr, argumentType : Type) : Identity =
+    //    let argumentDivinable = this.DivinableExprToScopedDivinableWrapper (argumentExpr, argumentType)
+    //    let argumentDivinableType = argumentExpr.Type
+    //    //let argumentDivinableInterfaceType = argumentDivinableType.GetInterfaces () |> Array.find (fun i -> i.Name.StartsWith "IDivinable")
+    //    let argumentIdentifyMethod = argumentDivinableType.GetMethod ("Identify")
+    //    let argumentIdentifyReturnValue = argumentIdentifyMethod.Invoke (argumentDivinable, [|scope; diviner|])
+    //    let argumentIdentity = argumentIdentifyReturnValue :?> Identity
+    //    argumentIdentity
 
-    member this.DivinableExprToScopedDivinableWrapper (divinableExpr : Expr, divinableType : Type) =
-        match <@ this.DivinableExprToScopedDivinable<obj> (obj () :?> _) @> with
-        | Call (_, objMethodInfo, _) ->
-            let methodDefinition = objMethodInfo.GetGenericMethodDefinition ()
-            let targetMethodInfo = methodDefinition.MakeGenericMethod [|divinableType|]
-            targetMethodInfo.Invoke (this, [|divinableExpr|])
-        | _ -> invalidOp ""
+    //member this.DivinableExprToScopedDivinableWrapper (divinableExpr : Expr, divinableType : Type) =
+    //    match <@ this.DivinableExprToScopedDivinable<obj> (obj () :?> _) @> with
+    //    | Call (_, objMethodInfo, _) ->
+    //        let methodDefinition = objMethodInfo.GetGenericMethodDefinition ()
+    //        let targetMethodInfo = methodDefinition.MakeGenericMethod [|divinableType|]
+    //        targetMethodInfo.Invoke (this, [|divinableExpr|])
+    //    | _ -> invalidOp ""
 
-    member this.DivinableExprToScopedDivinable<'T> (divinableExpr : Expr) : IDivinable<'T> =
-        match divinableExpr with
-        | Call (this', methodInfo, arguments) ->
-            let this'' =
-                match this' with
-                | Some t -> Some (t.ToIdentity ())
-                | None -> None
-            let arguments' = List.map (fun (a : Expr) -> a.ToIdentity ()) arguments
-            let parameterInfos = methodInfo.GetParameters ()
-            Divinable<'T> (fun (scope, diviner) ->
-                let scopeWithArguments =
-                    Seq.zip arguments' parameterInfos
-                    |> Seq.fold (fun (s : IdentificationScope) (a, p) ->
-                        IdentificationScope.add (VarIdentity (p.Name)) a s
-                    ) scope
-                let scopeWithThis =
-                    match this'' with
-                    | Some t -> IdentificationScope.add (VarIdentity "this") t scopeWithArguments
-                    | None -> scopeWithArguments
+    //member this.DivinableExprToScopedDivinable<'T> (divinableExpr : Expr) : IDivinable<'T> =
+    //    match divinableExpr with
+    //    | Call (this', methodInfo, arguments) ->
+    //        let this'' =
+    //            match this' with
+    //            | Some t -> Some (t.ToIdentity ())
+    //            | None -> None
+    //        let arguments' = List.map (fun (a : Expr) -> a.ToIdentity ()) arguments
+    //        let parameterInfos = methodInfo.GetParameters ()
+    //        Divinable<'T> (fun (scope, diviner) ->
+    //            let scopeWithArguments =
+    //                Seq.zip arguments' parameterInfos
+    //                |> Seq.fold (fun (s : IdentificationScope) (a, p) ->
+    //                    IdentificationScope.add (VarIdentity (p.Name)) a s
+    //                ) scope
+    //            let scopeWithThis =
+    //                match this'' with
+    //                | Some t -> IdentificationScope.add (VarIdentity "this") t scopeWithArguments
+    //                | None -> scopeWithArguments
 
-                let this''' =
-                    match this'' with
-                    | Some t -> diviner.ResolveValue (scope, t)
-                    | None -> null
-                let arguments'' = List.map (fun a -> diviner.ResolveValue (scope, a)) arguments' |> List.toArray
+    //            let this''' =
+    //                match this'' with
+    //                | Some t -> diviner.ResolveValue (scope, t)
+    //                | None -> null
+    //            let arguments'' = List.map (fun a -> diviner.ResolveValue (scope, a)) arguments' |> List.toArray
 
-                let r = methodInfo.Invoke (this''', arguments'')
-                let divinable : IDivinable<'T> = r :?> _
+    //            let r = methodInfo.Invoke (this''', arguments'')
+    //            let divinable : IDivinable<'T> = r :?> _
 
-                divinable.Identify (scopeWithThis, diviner)
-            ) :> _
-        | _ ->
-            invalidOp ""
+    //            divinable.Identify (scopeWithThis, diviner)
+    //        ) :> _
+    //    | _ ->
+    //        invalidOp ""
 
     member this.Return<'T> (_ : 'T) : IDivinable<'T> =
         invalidOp "" : IDivinable<'T>
@@ -126,16 +126,18 @@ type DivinableBuilder () as this =
                                 | [bindArgumentExpr; bindBodyExpr] ->
                                     match bindBodyExpr with
                                     | Lambda (lambdaVar, Let (letVar, letArgument, letBody)) ->
-                                        let bindArgument = DivinableBase (fun (scope, diviner) ->
-                                            let bindArgumentExprDivinable = exprDivinifier.ToDivinableBase bindArgumentExpr
-                                            let theContext = (scope, diviner)
-                                            let contextDoSomething (divinable : IDivinableBase) =
-                                                diviner.ResolveValue<IDivinableBase> (scope, divinable.Identify theContext)
-                                            let bindArgumentDivinable = diviner.ResolveValue<IDivinableBase> (scope, bindArgumentExprDivinable.Identify (scope, diviner))
-                                            let bindArgumentIdentity = bindArgumentDivinable.Identify (scope, diviner)
-                                            bindArgumentIdentity
+                                        let bindArgument = DivinableBase (fun context ->
+                                            context
+                                            //let bindArgumentExprDivinable = exprDivinifier.ToDivinableBase bindArgumentExpr
+                                            //let theContext = (scope, diviner)
+                                            //let contextDoSomething (divinable : IDivinableBase) =
+                                            //    diviner.ResolveValue<IDivinableBase> (scope, divinable.Identify theContext)
+                                            //let bindArgumentDivinable = diviner.ResolveValue<IDivinableBase> (scope, bindArgumentExprDivinable.Identify (scope, diviner))
+                                            //let bindArgumentIdentity = bindArgumentDivinable.Identify (scope, diviner)
+                                            //bindArgumentIdentity
                                         )
-                                        Some (DivinableBase.let' (DivinableBase.var letVar.Name) bindArgument (exprDivinifier.ToDivinableBase letBody))
+                                        Some (bindArgument :> _)
+                                        //Some (DivinableBase.let' (DivinableBase.var letVar.Name) bindArgument (exprDivinifier.ToDivinableBase letBody))
                                     | _ -> None
                                 | _ -> None
                             else
@@ -144,9 +146,10 @@ type DivinableBuilder () as this =
                             None
                     | _ -> None
                 ) :> _
-        Divinable<_> (fun (scope, diviner) ->
-            let runDivinable = exprDivinifier.ToDivinable runExpr
-            runDivinable.Identify (scope, diviner)
+        Divinable<_> (fun context ->
+            context
+            //let runDivinable = exprDivinifier.ToDivinable runExpr
+            //runDivinable.Identify (scope, diviner)
         ) :> _
         //match runExpr with
         //| Call (this', methodInfo, argumentExprs) ->
@@ -305,27 +308,27 @@ type DivinableBuilder () as this =
         //    Divinable<_> (fun _ -> identity) :> _
         //| _ -> invalidOp ""
 
-    member this.ScopeFromExpr (expr : Expr) : IdentificationScope =
-        let exprString = expr.ToString ()
-        let myArgumentIdentity = VarIdentity "myArgument"
-        IdentificationScope.empty ()
-        |> IdentificationScope.add myArgumentIdentity (ValueIdentity (42 :> obj, typeof<int>))
+    //member this.ScopeFromExpr (expr : Expr) : IdentificationScope =
+    //    let exprString = expr.ToString ()
+    //    let myArgumentIdentity = VarIdentity "myArgument"
+    //    IdentificationScope.empty ()
+    //    |> IdentificationScope.add myArgumentIdentity (ValueIdentity (42 :> obj, typeof<int>))
 
-    member this.DivinableFromDivinableExprAndBodyAndBodyExpr (divinableExpr : Expr<IDivinable<'T>>, body : 'T -> IDivinable<'U>, bodyExpr : Expr<'T -> IDivinable<'U>>) : IDivinable<'U> =
-        Divinable<'U> (fun (scope, diviner) ->
-            let divinableIdentity = divinableExpr.ToIdentity ()
-            let divinable : IDivinable<'U> =
-                match divinableIdentity with
-                | CallIdentity (this', methodInfo, arguments) ->
-                    let parameterInfos = methodInfo.GetParameters ()
-                    let scopeWithArguments = Seq.zip arguments parameterInfos |> Seq.fold (fun (s : IdentificationScope) (a, p) -> IdentificationScope.add (VarIdentity p.Name) a s) scope
-                    diviner.ResolveValue (scopeWithArguments, divinableIdentity)
-                | _ ->
-                    diviner.ResolveValue (scope, divinableIdentity)
-            let divinedValue = diviner.ResolveValue (scope, divinable.Identify (scope, diviner))
-            let bodyDivinable = body divinedValue
-            let bodyExprString = bodyExpr.ToString ()
-            let bodyScopeWithArguments = scope |> IdentificationScope.add (VarIdentity "returnValue") (ValueIdentity (divinedValue :> obj, typeof<'T>))
-            let bodyIdentity = bodyDivinable.Identify (bodyScopeWithArguments, diviner)
-            bodyIdentity
-        ) :> IDivinable<'U>
+    //member this.DivinableFromDivinableExprAndBodyAndBodyExpr (divinableExpr : Expr<IDivinable<'T>>, body : 'T -> IDivinable<'U>, bodyExpr : Expr<'T -> IDivinable<'U>>) : IDivinable<'U> =
+    //    Divinable<'U> (fun (scope, diviner) ->
+    //        let divinableIdentity = divinableExpr.ToIdentity ()
+    //        let divinable : IDivinable<'U> =
+    //            match divinableIdentity with
+    //            | CallIdentity (this', methodInfo, arguments) ->
+    //                let parameterInfos = methodInfo.GetParameters ()
+    //                let scopeWithArguments = Seq.zip arguments parameterInfos |> Seq.fold (fun (s : IdentificationScope) (a, p) -> IdentificationScope.add (VarIdentity p.Name) a s) scope
+    //                diviner.ResolveValue (scopeWithArguments, divinableIdentity)
+    //            | _ ->
+    //                diviner.ResolveValue (scope, divinableIdentity)
+    //        let divinedValue = diviner.ResolveValue (scope, divinable.Identify (scope, diviner))
+    //        let bodyDivinable = body divinedValue
+    //        let bodyExprString = bodyExpr.ToString ()
+    //        let bodyScopeWithArguments = scope |> IdentificationScope.add (VarIdentity "returnValue") (ValueIdentity (divinedValue :> obj, typeof<'T>))
+    //        let bodyIdentity = bodyDivinable.Identify (bodyScopeWithArguments, diviner)
+    //        bodyIdentity
+    //    ) :> IDivinable<'U>
