@@ -6,18 +6,18 @@ open FSharp.Reflection
 open FSharp.Quotations
 open FSharp.Quotations.Patterns
 
-type ExprDivinifier<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> (?interceptor : Expr -> IDivinableBase<IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> option) =
-    member this.ToDivinableBase (expr : Expr) : IDivinableBase<IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
-        Unchecked.defaultof<IDivinableBase<IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>>
+type ExprDivinifier<'Identifier> (?interceptor : Expr -> IDivinableBase<DivinationContext<'Identifier>, 'Identifier, obj, Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo> option) =
+    member this.ToDivinableBase (expr : Expr) : IDivinableBase<DivinationContext<'Identifier>, 'Identifier, obj, Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo> =
+        Unchecked.defaultof<IDivinableBase<DivinationContext<'Identifier>, 'Identifier, obj, Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo>>
 
-    member this.ToDivinableBase (var : Var) : IDivinableBase<IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
-        Unchecked.defaultof<IDivinableBase<IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>>
+    member this.ToDivinableBase (var : Var) : IDivinableBase<DivinationContext<'Identifier>, 'Identifier, obj, Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo> =
+        Unchecked.defaultof<IDivinableBase<DivinationContext<'Identifier>, 'Identifier, obj, Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo>>
 
-    member this.ToDivinable<'T> (expr : Expr<'T>) : IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
-        Unchecked.defaultof<IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>>
+    member this.ToDivinable<'T> (expr : Expr<'T>) : IDivinable<'T, 'Identifier> =
+        Unchecked.defaultof<IDivinable<'T, 'Identifier>>
         //this.ToDivinableBase expr.Raw |> Divinable.cast
 
-    interface IExprDivinifierBase<IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> with
+    interface IExprDivinifierBase<DivinationContext<'Identifier>, 'Identifier, obj, Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo> with
         member this.ToDivinableBase (expr : Expr) =
             this.ToDivinableBase expr
             //let handleNormally () =
@@ -54,6 +54,6 @@ type ExprDivinifier<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, '
             this.ToDivinableBase var
             //DivinableBase.var var.Name
 
-    interface IExprDivinifier<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> with
+    interface IExprDivinifier<'Identifier> with
         member this.ToDivinable<'T> (expr) =
             this.ToDivinable<'T> expr

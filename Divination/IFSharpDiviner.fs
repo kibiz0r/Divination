@@ -5,4 +5,4 @@ open System.Reflection
 open FSharp.Reflection
 
 type IFSharpDiviner<'Identifier> =
-    inherit IDiviner<IIdentificationScope<'Identifier>, 'Identifier>
+    inherit IDiviner<'Identifier>

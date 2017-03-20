@@ -5,37 +5,43 @@ open System.Reflection
 open FSharp.Reflection
 
 [<AbstractClass>]
-type Diviner<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> () =
-    member this.DivineBase (scope : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, divinable : IDivinableBase<IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : Divined<obj, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
-        let newContext = this.NewContext scope
-        let contextualized = divinable.Contextualize newContext
-        let identity = this.ResolveContext contextualized
-        let value = this.Identify (scope, identity)
-        DivinedValue (identity, value)
+type Diviner<'Identifier> () =
+    //member this.DivineBase (scope : IdentificationScope<'Identifier>, divinable : IDivinableBase<DivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : Divined<obj, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+    //    let newContext = this.NewContext scope
+    //    let contextualized = divinable.Contextualize newContext
+    //    let identity = this.EvaluateContext contextualized
+    //    let value = this.Resolve (scope, identity)
+    //    DivinedValue (identity, value)
 
-    member this.Divine<'T> (scope : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, divinable : IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : Divined<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
-        this.DivineBase (scope, divinable :> IDivinableBase<IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
-        |> Divined.cast
+    //member this.Divine<'T> (scope : IdentificationScope<'Identifier>, divinable : IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : Divined<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+    //    this.DivineBase (scope, divinable :> IDivinableBase<DivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
+    //    |> Divined.cast
 
-    interface IDiviner<IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> with
-        member this.DivineBase (scope, divinable) =
-            this.DivineBase (scope, divinable)
+    interface IDiviner<'Identifier> with
+        member this.NewContext (scope) =
+            this.NewContext scope
 
-        member this.Divine<'T> (scope, divinable) =
-            this.Divine<'T> (scope, divinable)
+        member this.EvaluateContext (context) =
+            this.EvaluateContext context
 
-    abstract member NewContext : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
-        -> IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        member this.Resolve (scope, identity) =
+            this.Resolve (scope, identity)
 
-    abstract member ResolveContext : IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
-        -> Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+        member this.Resolve<'T> (scope : IdentificationScope<'Identifier>, identity : Identity<'Identifier>) =
+            this.Resolve<'T> (scope, identity)
 
-    abstract member Identify : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
-        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+    abstract member NewContext : IdentificationScope<'Identifier>
+        -> DivinationContext<'Identifier>
+
+    abstract member EvaluateContext : DivinationContext<'Identifier>
+        -> Identity<'Identifier>
+
+    abstract member Resolve : IdentificationScope<'Identifier>
+        * Identity<'Identifier>
         -> obj
-    default this.Identify (scope, identity) =
+    default this.Resolve (scope, identity) =
         match IdentificationScope.tryFind identity scope with
-        | Some i -> this.Identify (scope, i)
+        | Some i -> this.Resolve (scope, i)
         | None ->
             match identity with
             | Identifier identifier ->
@@ -57,48 +63,54 @@ type Diviner<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'Propert
             | LetIdentity (var, argument, body) ->
                 this.Let (scope, var, argument, body)
 
-    abstract member Identifier : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+    abstract member Resolve<'T> : IdentificationScope<'Identifier>
+        * Identity<'Identifier>
+        -> 'T
+    default this.Resolve<'T> (scope, identity) : 'T =
+        this.Resolve (scope, identity) :?> 'T
+
+    abstract member Identifier : IdentificationScope<'Identifier>
         * 'Identifier
         -> obj
 
-    abstract member Call : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
-        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> option
-        * 'MethodInfo
-        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
+    abstract member Call : IdentificationScope<'Identifier>
+        * Identity<'Identifier> option
+        * MethodInfo
+        * Identity<'Identifier> list
         -> obj
     
-    abstract member NewObject : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
-        * 'ConstructorInfo
-        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
+    abstract member NewObject : IdentificationScope<'Identifier>
+        * ConstructorInfo
+        * Identity<'Identifier> list
         -> obj
     
-    abstract member PropertyGet : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
-        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> option
-        * 'PropertyInfo
-        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
+    abstract member PropertyGet : IdentificationScope<'Identifier>
+        * Identity<'Identifier> option
+        * PropertyInfo
+        * Identity<'Identifier> list
         -> obj
 
-    abstract member Value : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
-        * 'Value
-        * 'Type
+    abstract member Value : IdentificationScope<'Identifier>
+        * obj
+        * Type
         -> obj
 
-    abstract member Coerce : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
-        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
-        * 'Type
+    abstract member Coerce : IdentificationScope<'Identifier>
+        * Identity<'Identifier>
+        * Type
         -> obj
 
-    abstract member NewUnionCase : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
-        * 'UnionCaseInfo
-        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> list
+    abstract member NewUnionCase : IdentificationScope<'Identifier>
+        * UnionCaseInfo
+        * Identity<'Identifier> list
         -> obj
 
-    abstract member Var : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+    abstract member Var : IdentificationScope<'Identifier>
         * string
         -> obj
 
-    abstract member Let : IIdentificationScope<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
-        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
-        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
-        * Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+    abstract member Let : IdentificationScope<'Identifier>
+        * Identity<'Identifier>
+        * Identity<'Identifier>
+        * Identity<'Identifier>
         -> obj

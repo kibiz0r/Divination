@@ -5,9 +5,9 @@ open System.Reflection
 open FSharp.Reflection
 
 // An Identified is a handle to a value that has had its Identity tracked.
-type Identified<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
-    | IdentifiedValue of Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> * 'T
-    | IdentifiedException of Identity<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> * exn
+type Identified<'T, 'Identifier> =
+    | IdentifiedValue of Identity<'Identifier> * 'T
+    | IdentifiedException of Identity<'Identifier> * exn
 with
     member this.Identity =
         match this with

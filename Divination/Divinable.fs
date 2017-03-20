@@ -4,12 +4,18 @@ open System
 open System.Reflection
 open FSharp.Reflection
 
-type Divinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> (contextualize) =
-    interface IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> with
+type Divinable<'T, 'Identifier> (contextualize) =
+    interface IDivinable<'T, 'Identifier> with
         member this.Contextualize (context) =
             contextualize context
 
 module Divinable =
+    let value (value : 'T) : IDivinable<'T, _> =
+        Divinable<'T, _> (DivinationContext.return' (ValueIdentity (value, typeof<'T>))) :> _
+
+    let var (name : string) : IDivinable<'T, _> =
+        Divinable<'T, _> (DivinationContext.return' (VarIdentity name)) :> _
+
     //let cast (divinable : 'T when 'T :> IDivinableBase<'Context, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : IDivinable<'U, 'Context, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
     //    match divinable :> obj with
     //    | :? IDivinable<'U, 'Context, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> as casted ->
@@ -24,23 +30,20 @@ module Divinable =
     //        divinable.Identify (IdentificationScope.merge overridingScope originalScope, diviner)
     //    ) :> _
 
-    let let' (var : IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
-        (argument : IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
-        (body : IDivinable<'U, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
-        : IDivinable<'U, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
-        Divinable<'U, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> (fun context ->
-            context.Let (var, argument, body)
-        ) :> _
+    //let let' (var : IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
+    //    (argument : IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
+    //    (body : IDivinable<'U, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
+    //    : IDivinable<'U, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+    //    Divinable<'U, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> (fun context ->
+    //        context.Let (var, argument, body)
+    //    ) :> _
 
-    let var (name : string) : IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
-        Divinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> (fun context ->
-            context.Identity (VarIdentity name)
-        ) :> _
 
-    let value (value : 'Value, type' : 'Type) : IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
-        Divinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> (fun context ->
-            context.Identity (ValueIdentity (value, type'))
-        ) :> _
+
+    //let value (value : 'Value, type' : 'Type) : IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
+    //    Divinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> (fun context ->
+    //        context.Identity (ValueIdentity (value, type'))
+    //    ) :> _
 
 //[<AutoOpen>]
 //module DivinableExtensions =

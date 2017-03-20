@@ -23,10 +23,10 @@ type FSharpDiviner<'Identifier> () =
     interface IFSharpDiviner<'Identifier>
 
     override this.NewContext (scope) =
-        DivinationContext<'Identifier> () :> _
+        { Scope = scope; Operation = DivinationReturn (ValueIdentity ("nope" :> obj, typeof<string>)) }
 
-    override this.ResolveContext (context) =
-        context.Resolve this
+    override this.EvaluateContext (context) =
+        DivinationContext.evaluate this context
 
     //interface IDiviner<IDivinationContext<'Identifier>, IIdentificationScope<'Identifier>, 'Identifier> with
     //    member this.Divine<'T> (scope, divinable) =
@@ -38,37 +38,37 @@ type FSharpDiviner<'Identifier> () =
     override this.Call (scope, this', methodInfo, arguments) =
         let this'' =
             match this' with
-            | Some t -> this.Identify (scope, t)
+            | Some t -> this.Resolve (scope, t)
             | None -> null
-        let arguments' = List.map (fun argument -> this.Identify (scope, argument)) arguments |> List.toArray
+        let arguments' = List.map (fun argument -> this.Resolve (scope, argument)) arguments |> List.toArray
         methodInfo.Invoke (this'', arguments')
 
     default this.NewObject (scope, constructorInfo, arguments) =
-        let arguments' = List.map (fun argument -> this.Identify (scope, argument)) arguments |> List.toArray
+        let arguments' = List.map (fun argument -> this.Resolve (scope, argument)) arguments |> List.toArray
         constructorInfo.Invoke (arguments')
 
     default this.PropertyGet (scope, this', propertyInfo, arguments) =
         let this'' =
             match this' with
-            | Some t -> this.Identify (scope, t)
+            | Some t -> this.Resolve (scope, t)
             | None -> null
-        let arguments' = List.map (fun argument -> this.Identify (scope, argument)) arguments |> List.toArray
+        let arguments' = List.map (fun argument -> this.Resolve (scope, argument)) arguments |> List.toArray
         propertyInfo.GetValue (this'', arguments')
 
     default this.Value (scope, value, type') =
         Convert.ChangeType (value, type')
 
     default this.Coerce (scope, argument, type') =
-        Convert.ChangeType (this.Identify (scope, argument), type')
+        Convert.ChangeType (this.Resolve (scope, argument), type')
 
     default this.NewUnionCase (scope, unionCaseInfo, arguments) =
-        let arguments' = List.map (fun a -> this.Identify (scope, a)) arguments |> List.toArray
+        let arguments' = List.map (fun a -> this.Resolve (scope, a)) arguments |> List.toArray
         FSharpValue.MakeUnion (unionCaseInfo, arguments')
 
     default this.Var (scope, name) =
         invalidOp (sprintf "Unbound Var: %s" name)
 
     default this.Let (scope, var, argument, body) =
-        this.Identify (IdentificationScope.add var argument scope, body)
+        this.Resolve (IdentificationScope.add var argument scope, body)
 
 type FSharpDiviner = FSharpDiviner<obj>

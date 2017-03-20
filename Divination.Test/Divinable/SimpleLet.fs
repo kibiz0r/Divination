@@ -8,26 +8,51 @@ open Divination
 
 [<TestFixture>]
 module ``Simple let`` =
-    [<Test>]
-    let ``can be divined`` () =
-        let myDivined : Divined<int> =
-            let divinable =
-                divinable {
-                    let x = 5
-                    return x
-                }
-            FSharpDiviner.Current.Divine (IdentificationScope.empty (), divinable)
-        myDivined.Value |> should equal 5
+    //[<Test>]
+    //let ``can be divined`` () =
+    //    let myDivined : Divined<int> =
+    //        let divinable =
+    //            divinable {
+    //                let x = 5
+    //                return x
+    //            }
+    //        FSharpDiviner.Current.Divine (IdentificationScope.empty (), divinable)
+    //    myDivined.Value |> should equal 5
 
     [<Test>]
-    let ``Divinable.let' acts the same way as through DivinableBuilder`` () =
-        let myDivined : Divined<int> =
-            let divinable = Divinable.let' (Divinable.var "x") (Divinable.value (5 :> obj, typeof<int>)) (Divinable.var "x")
-            FSharpDiviner.Current.Divine (IdentificationScope.empty (), divinable)
-        let expected : Identity = LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>), VarIdentity "x")
-        myDivined.Identity |> should equal expected
+    let ``can be manually built via identities`` () =
+        let myDivinable =
+            Divinable<int> (DivinationContext.return' (LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>), VarIdentity "x")))
+        let myDivined = myDivinable.Divine ()
+        myDivined.Identity |> should equal (LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>), VarIdentity "x"))
         myDivined.Value |> should equal 5
 
-    module HowToBind =
-        let (var : Identity) (argument : IDivinable<IDivinable<'T>>) (body : IDivinable<'U>) : IDivinable<'U> =
-            ()
+    //[<Test>]
+    //let ``can rely on other divinables`` () =
+    //    let myDivinable = Divinable.let' (Divinable.var "x") (Divinable.value 5) (Divinable.var "x")
+    //    let myDivined = myDivinable.Divine ()
+    //    myDivined.Identity |> should equal (LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>), VarIdentity "x"))
+    //    myDivined.Value |> should equal 5
+
+    [<Test>]
+    let ``can be manually built via divinables`` () =
+        let var = Divinable.var "x"
+        let argument = Divinable.value 5
+        let body = Divinable.var "x"
+        let myDivinable = Divinable<int> (fun context ->
+            context |> DivinationContext.let' var argument (fun context ->
+                DivinationContext.returnFrom body context
+            )
+        )
+        let myDivined = myDivinable.Divine ()
+        myDivined.Identity |> should equal (LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>), VarIdentity "x"))
+        myDivined.Value |> should equal 5
+    
+    //[<Test>]
+    //let ``Divinable.let' also works`` () =
+    //    let myDivined : Divined<int> =
+    //        let divinable = Divinable.let' (Divinable.var "x") (Divinable.value (5 :> obj, typeof<int>)) (Divinable.var "x")
+    //        FSharpDiviner.Current.Divine (IdentificationScope.empty (), divinable)
+    //    let expected : Identity = LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>), VarIdentity "x")
+    //    myDivined.Identity |> should equal expected
+    //    myDivined.Value |> should equal 5

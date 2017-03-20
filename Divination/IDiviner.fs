@@ -4,9 +4,9 @@ open System
 open System.Reflection
 open FSharp.Reflection
 
-type IDiviner<'Scope, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
-    inherit IDivinerBase<IDivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Scope, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+type IDiviner<'Identifier> =
+    inherit IDivinerBase<DivinationContext<'Identifier>, IdentificationScope<'Identifier>, Identity<'Identifier>>
 
-    abstract member Divine<'T> : 'Scope
-        * IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
-        -> Divined<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>
+    abstract member Resolve<'T> : IdentificationScope<'Identifier>
+        * Identity<'Identifier>
+        -> 'T
