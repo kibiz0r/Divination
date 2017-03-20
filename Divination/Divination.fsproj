@@ -48,27 +48,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="IdentityBase.fs" />
     <Compile Include="Identity.fs" />
     <Compile Include="Identified.fs" />
-    <Compile Include="IIdentificationScope.fs" />
     <Compile Include="IdentificationScope.fs" />
     <Compile Include="IIdentifiable.fs" />
-    <Compile Include="DivinedBase.fs" />
-    <Compile Include="IdentityModule.fs" />
     <Compile Include="Divined.fs" />
-    <Compile Include="IDivinableBase.fs" />
-    <Compile Include="IDivinerBase.fs" />
+    <Compile Include="DivinationScope.fs" />
+    <Compile Include="ContextualIdentity.fs" />
     <Compile Include="IDivinationContext.fs" />
+    <Compile Include="IDiviner.fs" />
     <Compile Include="DivinationContext.fs" />
     <Compile Include="IDivinable.fs" />
-    <Compile Include="IDiviner.fs" />
     <Compile Include="Diviner.fs" />
-    <Compile Include="DivinationContextModule.fs" />
     <Compile Include="Divinable.fs" />
     <Compile Include="Expr.fs" />
-    <Compile Include="DivinableBase.fs" />
-    <Compile Include="IExprDivinifierBase.fs" />
     <Compile Include="IExprDivinifier.fs" />
     <Compile Include="ExprDivinifier.fs" />
     <None Include="packages.config" />
@@ -81,7 +74,6 @@
     <Compile Include="TopLevelOperations.fs" />
     <Compile Include="IDivinerExtensions.fs" />
     <Compile Include="IDivinableExtensions.fs" />
-    <Compile Include="DivinationContextualIdentity.fs" />
   </ItemGroup>
   <Import Project="$(FSharpTargetsPath)" />
 </Project>

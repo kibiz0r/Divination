@@ -16,7 +16,7 @@ module ``Custom-divining a constructor`` =
                     customOverride
             }
         let myDivined =
-            FSharpDiviner.Current.Divine (IdentificationScope.empty (),
+            FSharpDiviner.Current.Divine (DivinationScope.empty,
                 divinable {
                     return obj ()
                 }

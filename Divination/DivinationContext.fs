@@ -60,11 +60,35 @@ open FSharp.Reflection
 //        member this.Resolve (diviner) =
 //            this.Resolve diviner
 
-type DivinationOperation<'Identifier> =
-    | DivinationReturn of Identity<'Identifier>
-    | DivinationIdentify of IDivinableBase<DivinationContext<'Identifier>, 'Identifier, obj, Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo> * (Identity<'Identifier> -> DivinationContext<'Identifier>)
+// A DivinationContext supports a divinable's ability to generate its *contextual* identity, which may be an identity
+// that is relative to parent contexts, or an absolute/canonical identity, and it carries with it any resolved
+// identities that were evaluated in obtaining its contextual identity.
+// 
+// The context allows the divinable to:
+// - Identify other divinables
+//   - Within this context, or a derived one, or new one
+//   - Those identities are also contextual
+// - Resolve arbitrary identities
+//   - Again, within any context
+//   - Resolutions are stored, by identity, so that subsequent resolutions do not evaluate the same identity twice
+// - Translate identities that belong to other contexts into identities with respect to this context
+//   - This does not necessarily make them canonical identities
+// 
+// The context does not:
+// - Give direct access to the diviner
+type DivinationContext<'Identifier> (diviner : IDiviner<'Identifier>, scope : DivinationScope<'Identifier>) =
+    interface IDivinationContext<'Identifier> with
+        member this.Return identity : ContextualIdentity<'Identifier> =
+            { Scope = scope; Identity = identity }
 
-and DivinationContext<'Identifier> = {
-    Scope : IdentificationScope<'Identifier>
-    Operation : DivinationOperation<'Identifier>
-}
+        member this.Let (var : Identity<'Identifier>, argument : Identity<'Identifier>) : IDivinationContext<'Identifier> =
+            let scope = { scope with IdentificationScope = IdentificationScope.add var argument scope.IdentificationScope }
+            DivinationContext (diviner, scope) :> _
+
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module DivinationContext =
+    let return' identity (context : IDivinationContext<_>) =
+        context.Return identity
+
+    let let' var argument (context : IDivinationContext<_>) =
+        context.Let (var, argument)

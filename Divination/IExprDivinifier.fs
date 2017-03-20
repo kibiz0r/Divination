@@ -7,5 +7,6 @@ open FSharp.Quotations
 open FSharp.Quotations.Patterns
 
 type IExprDivinifier<'Identifier> =
-    inherit IExprDivinifierBase<DivinationContext<'Identifier>, 'Identifier, obj, Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo>
+    abstract member ToDivinableBase : Expr -> IDivinable<obj, 'Identifier>
+    abstract member ToDivinableBase : Var -> IDivinable<obj, 'Identifier>
     abstract member ToDivinable<'T> : Expr<'T> -> IDivinable<'T, 'Identifier>

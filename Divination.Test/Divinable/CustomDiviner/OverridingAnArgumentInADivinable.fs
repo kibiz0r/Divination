@@ -49,7 +49,7 @@ module ``Custom-divining a divinable's argument`` =
                         base.Var (scope, name)
             }
         let myDivined =
-            FSharpDiviner.Current.Divine (IdentificationScope.empty (),
+            FSharpDiviner.Current.Divine (DivinationScope.empty,
                 divinable {
                     let myArgument = 1
                     let! returnValue = MyModule.aFuncThatAcceptsAnArgumentAndReturnsDivinable myArgument

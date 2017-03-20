@@ -14,7 +14,7 @@ module ``No-argument constructors`` =
         use __ = constructions.Connect ()
 
         let myDivined =
-            FSharpDiviner.Current.Divine (IdentificationScope.empty (),
+            FSharpDiviner.Current.Divine (DivinationScope.empty,
                 divinable {
                     return NoArgumentConstructorType ()
                 }

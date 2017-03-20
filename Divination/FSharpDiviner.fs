@@ -22,16 +22,6 @@ type FSharpDiviner<'Identifier> () =
 
     interface IFSharpDiviner<'Identifier>
 
-    override this.NewContext (scope) =
-        { Scope = scope; Operation = DivinationReturn (ValueIdentity ("nope" :> obj, typeof<string>)) }
-
-    override this.EvaluateContext (context) =
-        DivinationContext.evaluate this context
-
-    //interface IDiviner<IDivinationContext<'Identifier>, IIdentificationScope<'Identifier>, 'Identifier> with
-    //    member this.Divine<'T> (scope, divinable) =
-    //        this.Divine<'T> (scope, divinable)
-
     override this.Identifier (scope, identifier) =
         raise (NotImplementedException "FSharpDiviner does not handle Identifiers")
 
@@ -69,6 +59,6 @@ type FSharpDiviner<'Identifier> () =
         invalidOp (sprintf "Unbound Var: %s" name)
 
     default this.Let (scope, var, argument, body) =
-        this.Resolve (IdentificationScope.add var argument scope, body)
+        this.Resolve ({ scope with IdentificationScope = IdentificationScope.add var argument scope.IdentificationScope }, body)
 
 type FSharpDiviner = FSharpDiviner<obj>

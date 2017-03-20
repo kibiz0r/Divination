@@ -126,8 +126,8 @@ type DivinableBuilder () as this =
                                 | [bindArgumentExpr; bindBodyExpr] ->
                                     match bindBodyExpr with
                                     | Lambda (lambdaVar, Let (letVar, letArgument, letBody)) ->
-                                        let bindArgument = DivinableBase (fun context ->
-                                            context
+                                        let bindArgument = Divinable (fun context ->
+                                            context.Return (ValueIdentity ("bindeded" :> obj, typeof<string>))
                                             //let bindArgumentExprDivinable = exprDivinifier.ToDivinableBase bindArgumentExpr
                                             //let theContext = (scope, diviner)
                                             //let contextDoSomething (divinable : IDivinableBase) =
@@ -147,7 +147,7 @@ type DivinableBuilder () as this =
                     | _ -> None
                 ) :> _
         Divinable<_> (fun context ->
-            context
+            context.Return (ValueIdentity ("idk what this is" :> obj, typeof<string>))
             //let runDivinable = exprDivinifier.ToDivinable runExpr
             //runDivinable.Identify (scope, diviner)
         ) :> _

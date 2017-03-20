@@ -6,110 +6,111 @@ open FSharp.Reflection
 
 [<AbstractClass>]
 type Diviner<'Identifier> () =
-    //member this.DivineBase (scope : IdentificationScope<'Identifier>, divinable : IDivinableBase<DivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : Divined<obj, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
-    //    let newContext = this.NewContext scope
-    //    let contextualized = divinable.Contextualize newContext
-    //    let identity = this.EvaluateContext contextualized
-    //    let value = this.Resolve (scope, identity)
-    //    DivinedValue (identity, value)
-
-    //member this.Divine<'T> (scope : IdentificationScope<'Identifier>, divinable : IDivinable<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>) : Divined<'T, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo> =
-    //    this.DivineBase (scope, divinable :> IDivinableBase<DivinationContext<'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>, 'Identifier, 'Value, 'Type, 'ConstructorInfo, 'MethodInfo, 'PropertyInfo, 'UnionCaseInfo>)
-    //    |> Divined.cast
-
     interface IDiviner<'Identifier> with
-        member this.NewContext (scope) =
-            this.NewContext scope
-
-        member this.EvaluateContext (context) =
-            this.EvaluateContext context
-
         member this.Resolve (scope, identity) =
             this.Resolve (scope, identity)
 
-        member this.Resolve<'T> (scope : IdentificationScope<'Identifier>, identity : Identity<'Identifier>) =
+        member this.Resolve<'T> (scope, identity) =
             this.Resolve<'T> (scope, identity)
 
-    abstract member NewContext : IdentificationScope<'Identifier>
-        -> DivinationContext<'Identifier>
+        member this.NewContext (scope) =
+            this.NewContext scope
 
-    abstract member EvaluateContext : DivinationContext<'Identifier>
-        -> Identity<'Identifier>
+        member this.Canonicalize (scope, contextualIdentity) =
+            this.Canonicalize (scope, contextualIdentity)
 
-    abstract member Resolve : IdentificationScope<'Identifier>
+    abstract member Resolve : DivinationScope<'Identifier>
         * Identity<'Identifier>
         -> obj
     default this.Resolve (scope, identity) =
-        match IdentificationScope.tryFind identity scope with
-        | Some i -> this.Resolve (scope, i)
+        match Map.tryFind identity scope.ResolutionMap with
+        | Some r -> r
         | None ->
-            match identity with
-            | Identifier identifier ->
-                this.Identifier (scope, identifier)
-            | CallIdentity (this', methodInfo, arguments) ->
-                this.Call (scope, this', methodInfo, arguments)
-            | NewObjectIdentity (constructorInfo, arguments) ->
-                this.NewObject (scope, constructorInfo, arguments)
-            | PropertyGetIdentity (this', propertyInfo, arguments) ->
-                this.PropertyGet (scope, this', propertyInfo, arguments)
-            | ValueIdentity (value, type') ->
-                this.Value (scope, value, type')
-            | CoerceIdentity (argument, type') ->
-                this.Coerce (scope, argument, type')
-            | NewUnionCaseIdentity (unionCaseInfo, arguments) ->
-                this.NewUnionCase (scope, unionCaseInfo, arguments)
-            | VarIdentity name ->
-                this.Var (scope, name)
-            | LetIdentity (var, argument, body) ->
-                this.Let (scope, var, argument, body)
+            match IdentificationScope.tryFind identity scope.IdentificationScope with
+            | Some i -> this.Resolve (scope, i)
+            | None ->
+                match identity with
+                | Identifier identifier ->
+                    this.Identifier (scope, identifier)
+                | CallIdentity (this', methodInfo, arguments) ->
+                    this.Call (scope, this', methodInfo, arguments)
+                | NewObjectIdentity (constructorInfo, arguments) ->
+                    this.NewObject (scope, constructorInfo, arguments)
+                | PropertyGetIdentity (this', propertyInfo, arguments) ->
+                    this.PropertyGet (scope, this', propertyInfo, arguments)
+                | ValueIdentity (value, type') ->
+                    this.Value (scope, value, type')
+                | CoerceIdentity (argument, type') ->
+                    this.Coerce (scope, argument, type')
+                | NewUnionCaseIdentity (unionCaseInfo, arguments) ->
+                    this.NewUnionCase (scope, unionCaseInfo, arguments)
+                | VarIdentity name ->
+                    this.Var (scope, name)
+                | LetIdentity (var, argument, body) ->
+                    this.Let (scope, var, argument, body)
 
-    abstract member Resolve<'T> : IdentificationScope<'Identifier>
+    abstract member Resolve<'T> : DivinationScope<'Identifier>
         * Identity<'Identifier>
         -> 'T
     default this.Resolve<'T> (scope, identity) : 'T =
         this.Resolve (scope, identity) :?> 'T
 
-    abstract member Identifier : IdentificationScope<'Identifier>
+    abstract member NewContext : DivinationScope<'Identifier>
+        -> IDivinationContext<'Identifier>
+    default this.NewContext (scope) =
+        DivinationContext<'Identifier> (this, scope) :> _
+
+    abstract member Canonicalize : DivinationScope<'Identifier>
+        * ContextualIdentity<'Identifier>
+        -> DivinationScope<'Identifier> * Identity<'Identifier>
+    default this.Canonicalize (scope, contextualIdentity) =
+        match IdentificationScope.tryFind contextualIdentity.Identity contextualIdentity.Scope.IdentificationScope with
+        | Some i ->
+            contextualIdentity.Scope, i
+        | None ->
+            contextualIdentity.Scope, contextualIdentity.Identity
+
+    abstract member Identifier : DivinationScope<'Identifier>
         * 'Identifier
         -> obj
 
-    abstract member Call : IdentificationScope<'Identifier>
+    abstract member Call : DivinationScope<'Identifier>
         * Identity<'Identifier> option
         * MethodInfo
         * Identity<'Identifier> list
         -> obj
     
-    abstract member NewObject : IdentificationScope<'Identifier>
+    abstract member NewObject : DivinationScope<'Identifier>
         * ConstructorInfo
         * Identity<'Identifier> list
         -> obj
     
-    abstract member PropertyGet : IdentificationScope<'Identifier>
+    abstract member PropertyGet : DivinationScope<'Identifier>
         * Identity<'Identifier> option
         * PropertyInfo
         * Identity<'Identifier> list
         -> obj
 
-    abstract member Value : IdentificationScope<'Identifier>
+    abstract member Value : DivinationScope<'Identifier>
         * obj
         * Type
         -> obj
 
-    abstract member Coerce : IdentificationScope<'Identifier>
+    abstract member Coerce : DivinationScope<'Identifier>
         * Identity<'Identifier>
         * Type
         -> obj
 
-    abstract member NewUnionCase : IdentificationScope<'Identifier>
+    abstract member NewUnionCase : DivinationScope<'Identifier>
         * UnionCaseInfo
         * Identity<'Identifier> list
         -> obj
 
-    abstract member Var : IdentificationScope<'Identifier>
+    abstract member Var : DivinationScope<'Identifier>
         * string
         -> obj
 
-    abstract member Let : IdentificationScope<'Identifier>
+    abstract member Let : DivinationScope<'Identifier>
         * Identity<'Identifier>
         * Identity<'Identifier>
         * Identity<'Identifier>

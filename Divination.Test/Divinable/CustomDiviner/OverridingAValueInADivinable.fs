@@ -28,7 +28,7 @@ module ``Custom-divining a divinable's return value`` =
                     | other -> other
             }
         let myDivined =
-            FSharpDiviner.Current.Divine (IdentificationScope.empty (),
+            FSharpDiviner.Current.Divine (DivinationScope.empty,
                 divinable {
                     let! returnValue = MyModule.aFuncThatReturnsDivinable ()
                     return returnValue

@@ -16,7 +16,7 @@ module ``Already-bound no-argument constructors`` =
         use __ = constructions.Connect ()
 
         let myScope =
-            let scope = IdentificationScope.empty ()
+            let scope = DivinationScope.empty
             scope
             //let constructorIdentity = <@ NoArgumentConstructorType () @>.ToIdentity ()
             //IdentificationScope.add constructorIdentity someSpecialIdentityISuppose? scope

@@ -9,4 +9,4 @@ open FSharp.Reflection
 // when the Divinable is first created. Once that Identity is fully formed, that plus the designation of its type is
 // enough for a Diviner to resolve it to an instance.
 type IDivinable<'T, 'Identifier> =
-    inherit IDivinableBase<DivinationContext<'Identifier>, 'Identifier, obj, Type, ConstructorInfo, MethodInfo, PropertyInfo, UnionCaseInfo>
+    abstract member Contextualize : IDivinationContext<'Identifier> -> ContextualIdentity<'Identifier>

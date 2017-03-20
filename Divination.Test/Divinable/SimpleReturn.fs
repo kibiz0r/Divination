@@ -21,9 +21,7 @@ module ``Simple return`` =
         let valueDivinable = Divinable.value 5
         let myDivinable =
             Divinable<int> (fun context ->
-                context |> DivinationContext.identify valueDivinable (fun valueIdentity ->
-                    DivinationContext.return' valueIdentity context
-                )
+                context.Return (ValueIdentity (5 :> obj, typeof<int>))
             )
         let myDivined = myDivinable.Divine ()
         myDivined.Identity |> should equal (ValueIdentity (5 :> obj, typeof<int>))

@@ -11,7 +11,7 @@ type Divinable<'T, 'Identifier> (contextualize) =
 
 module Divinable =
     let value (value : 'T) : IDivinable<'T, _> =
-        Divinable<'T, _> (DivinationContext.return' (ValueIdentity (value, typeof<'T>))) :> _
+        Divinable<'T, _> (fun context -> context.Return (ValueIdentity (value :> obj, typeof<'T>))) :> _
 
     let var (name : string) : IDivinable<'T, _> =
         Divinable<'T, _> (DivinationContext.return' (VarIdentity name)) :> _

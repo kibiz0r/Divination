@@ -20,11 +20,26 @@ module ``Simple let`` =
     //    myDivined.Value |> should equal 5
 
     [<Test>]
-    let ``can be manually built via identities`` () =
+    let ``can be built via an identity`` () =
         let myDivinable =
             Divinable<int> (DivinationContext.return' (LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>), VarIdentity "x")))
         let myDivined = myDivinable.Divine ()
         myDivined.Identity |> should equal (LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>), VarIdentity "x"))
+        myDivined.Value |> should equal 5
+
+    [<Test>]
+    let ``can be erased by building through nested identities`` () =
+        //let var = Divinable.var "x"
+        //let argument = Divinable.value 5
+        //let body = Divinable.var "x"
+        let var = VarIdentity "x"
+        let argument = ValueIdentity (5 :> obj, typeof<int>)
+        let body = VarIdentity "x"
+        let myDivinable = Divinable<int> (fun context ->
+            context |> DivinationContext.let' var argument |> DivinationContext.return' body
+        )
+        let myDivined = myDivinable.Divine ()
+        myDivined.Identity |> should equal (ValueIdentity (5 :> obj, typeof<int>))
         myDivined.Value |> should equal 5
 
     //[<Test>]
@@ -34,19 +49,6 @@ module ``Simple let`` =
     //    myDivined.Identity |> should equal (LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>), VarIdentity "x"))
     //    myDivined.Value |> should equal 5
 
-    [<Test>]
-    let ``can be manually built via divinables`` () =
-        let var = Divinable.var "x"
-        let argument = Divinable.value 5
-        let body = Divinable.var "x"
-        let myDivinable = Divinable<int> (fun context ->
-            context |> DivinationContext.let' var argument (fun context ->
-                DivinationContext.returnFrom body context
-            )
-        )
-        let myDivined = myDivinable.Divine ()
-        myDivined.Identity |> should equal (LetIdentity (VarIdentity "x", ValueIdentity (5 :> obj, typeof<int>), VarIdentity "x"))
-        myDivined.Value |> should equal 5
     
     //[<Test>]
     //let ``Divinable.let' also works`` () =
